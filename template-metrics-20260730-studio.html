@@ -252,8 +252,15 @@
     }
 
     .overview-grid {
-      grid-template-columns: minmax(420px, 0.92fr) minmax(520px, 1.08fr);
+      grid-template-columns: minmax(0, 1fr);
       align-items: stretch;
+    }
+
+    .overview-top {
+      display: grid;
+      grid-template-columns: minmax(420px, 0.92fr) minmax(520px, 1.08fr);
+      gap: 18px;
+      align-items: start;
     }
 
     .stack {
@@ -560,13 +567,13 @@
       width: 100%;
       display: grid;
       gap: 8px;
-      padding: 16px;
+      padding: 18px;
       color: #fff;
     }
 
     .ranking-title {
       margin: 0;
-      font-size: 22px;
+      font-size: 24px;
       line-height: 0.96;
       letter-spacing: -0.04em;
       max-width: 12ch;
@@ -577,6 +584,7 @@
       text-overflow: ellipsis;
       word-break: break-word;
       overflow-wrap: anywhere;
+      text-shadow: 0 2px 12px rgba(7, 8, 12, 0.48);
     }
 
     .ranking-row[data-cols="5"] .ranking-title,
@@ -650,13 +658,21 @@
       align-items: center;
       gap: 8px;
       width: fit-content;
-      padding: 7px 10px;
+      padding: 8px 12px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.14);
+      background: rgba(7, 8, 12, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.22);
       color: #fff;
-      font-size: 11px;
+      font-size: 12px;
       font-family: var(--font-mono);
       backdrop-filter: blur(10px);
+    }
+
+    .ranking-submetric {
+      color: rgba(255, 255, 255, 0.84);
+      font-size: 12px;
+      line-height: 1.25;
+      text-shadow: 0 2px 10px rgba(7, 8, 12, 0.42);
     }
 
     .ranking-switch {
@@ -774,12 +790,13 @@
     }
 
     .overview-left {
-      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
     }
 
     .overview-right {
-      grid-template-rows: minmax(0, 1fr);
-      height: 100%;
+      grid-template-rows: auto auto;
+      align-content: start;
+      height: auto;
     }
 
     .planning-layout {
@@ -1049,6 +1066,29 @@
     .cadence-cell[data-level="3"] { background: rgba(255, 202, 189, 0.76); }
     .cadence-cell[data-level="4"] { background: rgba(255, 104, 53, 0.96); }
 
+    .overview-left-signals {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .signal-card {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .signal-card .card-head {
+      margin-bottom: 12px;
+    }
+
+    .signal-card .card-head h3 {
+      font-size: 18px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
     .status-split {
       display: grid;
       grid-template-columns: minmax(0, 1.04fr) minmax(320px, 0.96fr);
@@ -1073,47 +1113,175 @@
     }
 
     .status-bars {
-      display: grid;
-      gap: 12px;
+      display: block;
       margin-top: 4px;
     }
 
+    .status-orbit {
+      display: grid;
+      justify-items: center;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .status-ring-shell {
+      display: grid;
+      gap: 14px;
+      justify-items: center;
+      align-content: center;
+      width: min(100%, 320px);
+    }
+
+    .status-ring {
+      position: relative;
+      width: 252px;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(214, 244, 0, 0.34);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.76),
+        0 18px 44px rgba(29, 33, 43, 0.08);
+    }
+
+    .status-ring-core {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(22, 24, 31, 0.06);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .status-ring-core strong {
+      display: block;
+      font-size: 54px;
+      line-height: 0.9;
+      letter-spacing: -0.06em;
+    }
+
+    .status-ring-core span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .status-chip-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .status-chip {
+      display: grid;
+      gap: 6px;
+      justify-items: center;
+      align-content: start;
+      min-width: 0;
+      padding: 8px 6px 0;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .status-chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.56);
+    }
+
+    .status-chip-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      line-height: 1.15;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-ring-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .status-dot.lime { background: #c8efff; }
+    .status-dot.blue { background: #9edfff; }
+    .status-dot.orange { background: #ff7440; }
+    .status-dot.ink { background: #ffd8cb; }
+
     .status-row {
       display: grid;
-      gap: 4px;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.66);
+      border: 1px solid rgba(22, 24, 31, 0.05);
     }
 
     .status-row-head {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      gap: 6px;
-      font-size: 10px;
+      gap: 12px;
     }
 
-    .status-row-head strong {
+    .status-row-copy {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .status-row-copy strong {
+      font-size: 18px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .status-row-copy span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .status-row-stats {
+      display: grid;
+      justify-items: end;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+
+    .status-row-stats strong {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .status-row-stats span {
+      color: var(--muted);
+      font-family: var(--font-mono);
       font-size: 11px;
-      letter-spacing: -0.02em;
-    }
-
-    .status-row-head span {
-      color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 10px;
-    }
-
-    .status-row-foot {
-      display: flex;
-      justify-content: flex-end;
-      color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 10px;
       line-height: 1;
     }
 
     .status-track {
       width: 100%;
-      height: 8px;
+      height: 10px;
       border-radius: 999px;
       background: rgba(22, 24, 31, 0.06);
       overflow: hidden;
@@ -1132,6 +1300,7 @@
     .replay-panel {
       display: grid;
       gap: 14px;
+      height: 100%;
     }
 
     .replay-headline {
@@ -1144,6 +1313,35 @@
       letter-spacing: -0.02em;
     }
 
+    .replay-panel .leaderboard-list {
+      margin-top: 0;
+      gap: 10px;
+    }
+
+    .replay-panel .leaderboard-item {
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 11px 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(22, 24, 31, 0.05);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .replay-panel .leaderboard-rank {
+      font-size: 14px;
+    }
+
+    .replay-panel .leaderboard-main strong {
+      font-size: 14px;
+      line-height: 1.05;
+    }
+
+    .replay-panel .leaderboard-metric strong {
+      font-size: 20px;
+      line-height: 0.94;
+    }
+
     .replay-headline span {
       color: var(--muted);
       font-size: 12px;
@@ -1152,23 +1350,27 @@
 
     .replay-visual {
       display: grid;
-      grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
       align-items: center;
-      min-height: 214px;
-      padding: 14px 12px 26px;
+      min-height: 232px;
+      padding: 16px 14px 20px;
       border-radius: 18px;
       background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.76) 0%, rgba(246, 247, 249, 0.96) 100%);
-      border: 1px solid rgba(22, 24, 31, 0.06);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(249, 252, 255, 0.98) 100%);
+      border: 1px solid rgba(214, 244, 0, 0.34);
     }
 
     .replay-column {
       display: grid;
+      grid-template-rows: minmax(0, 1fr) auto auto;
+      gap: 8px;
       align-items: end;
       justify-items: center;
       align-self: stretch;
       min-width: 0;
+      color: inherit;
+      text-decoration: none;
     }
 
     .replay-bar {
@@ -1178,18 +1380,18 @@
       border-radius: 12px 12px 5px 5px;
       border: 1px solid rgba(22, 24, 31, 0.06);
       background:
-        linear-gradient(180deg, rgba(17, 38, 94, 0.92) 0%, rgba(170, 223, 243, 0.52) 100%);
+        linear-gradient(180deg, rgba(158, 223, 255, 0.98) 0%, rgba(200, 239, 255, 0.88) 100%);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
       transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
     }
 
     .replay-column.is-hot .replay-bar {
       background:
-        linear-gradient(180deg, rgba(255, 104, 53, 0.96) 0%, rgba(255, 202, 189, 0.8) 100%);
-      border-color: rgba(255, 104, 53, 0.24);
+        linear-gradient(180deg, rgba(255, 116, 64, 0.98) 0%, rgba(255, 216, 203, 0.94) 100%);
+      border-color: rgba(255, 116, 64, 0.26);
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.32),
-        0 12px 24px rgba(255, 104, 53, 0.12);
+        0 12px 24px rgba(255, 116, 64, 0.14);
     }
 
     .replay-column:hover .replay-bar {
@@ -1198,25 +1400,43 @@
     }
 
     .replay-column-label {
-      margin-top: 8px;
       color: var(--muted-soft);
       font-size: 10px;
       font-family: var(--font-mono);
       white-space: nowrap;
     }
 
+    .replay-column-rate {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .replay-column-title {
+      width: 100%;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.15;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .replay-meta {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
+      gap: 12px;
+      margin-top: 12px;
     }
 
     .replay-item {
       display: grid;
-      gap: 8px;
+      gap: 10px;
       min-width: 0;
-      padding: 12px 14px;
-      border-radius: 16px;
+      padding: 14px 14px 13px;
+      border-radius: 18px;
       background: rgba(255, 255, 255, 0.72);
       border: 1px solid rgba(22, 24, 31, 0.06);
     }
@@ -1228,10 +1448,46 @@
     }
 
     .replay-item-head {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      gap: 10px;
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .replay-item-kicker {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .replay-item-kicker .replay-rank {
+      font-size: 12px;
+    }
+
+    .replay-item-kicker .replay-title {
+      font-size: 14px;
+      line-height: 1.08;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .replay-item-rate {
+      font-family: var(--font-mono);
+      font-size: 30px;
+      line-height: 0.9;
+      letter-spacing: -0.05em;
+      color: var(--ink);
+      flex: 0 0 auto;
+    }
+
+    .replay-item-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 2px;
+      border-top: 1px solid rgba(22, 24, 31, 0.06);
     }
 
     .replay-rank {
@@ -1256,15 +1512,163 @@
       color: var(--ink);
     }
 
-    .replay-chip {
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: rgba(22, 24, 31, 0.05);
+    .replay-foot-label {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .replay-foot-value {
+      color: var(--ink);
+      font-size: 18px;
+      font-family: var(--font-mono);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .speed-board {
+      display: grid;
+      gap: 14px;
+      margin-top: 2px;
+      height: 100%;
+      align-content: start;
+    }
+
+    .speed-overview {
+      display: grid;
+      gap: 14px;
+    }
+
+    .speed-hero {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(249, 252, 255, 0.98) 100%);
+      border: 1px solid rgba(214, 244, 0, 0.34);
+    }
+
+    .speed-hero-copy {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .speed-hero-copy strong {
+      font-size: 20px;
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .speed-hero-copy span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .speed-hero-value {
+      display: grid;
+      justify-items: end;
+      gap: 2px;
+      flex: 0 0 auto;
+    }
+
+    .speed-hero-value strong {
+      font-family: var(--font-mono);
+      font-size: 28px;
+      line-height: 0.92;
+      letter-spacing: -0.05em;
+    }
+
+    .speed-hero-value span {
       color: var(--muted);
       font-size: 10px;
       font-family: var(--font-mono);
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
+    }
+
+    .speed-bars {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 12px;
+      align-items: end;
+      min-height: 264px;
+      padding: 8px 4px 0;
+    }
+
+    .speed-bar-col {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto auto;
+      gap: 10px;
+      align-items: end;
+      min-width: 0;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .speed-bar-wrap {
+      position: relative;
+      display: grid;
+      align-items: end;
+      min-height: 190px;
+      padding-top: 18px;
+    }
+
+    .speed-bar {
+      width: 100%;
+      min-height: 24px;
+      border-radius: 18px 18px 8px 8px;
+      background: linear-gradient(180deg, rgba(158, 223, 255, 0.98) 0%, rgba(200, 239, 255, 0.88) 100%);
+      border: 1px solid rgba(22, 24, 31, 0.06);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .speed-bar-col.is-hot .speed-bar {
+      background: linear-gradient(180deg, rgba(255, 116, 64, 0.98) 0%, rgba(255, 216, 203, 0.94) 100%);
+      box-shadow: 0 18px 34px rgba(255, 116, 64, 0.14);
+    }
+
+    .speed-bar-col:hover .speed-bar {
+      transform: translateY(-2px);
+    }
+
+    .speed-bar-cap {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(22, 24, 31, 0.06);
+      color: var(--muted);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+
+    .speed-bar-name {
+      color: var(--ink);
+      font-size: 11px;
+      line-height: 1.2;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .speed-bar-value {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1;
+      text-align: center;
     }
 
     .data-tooltip {
@@ -1310,6 +1714,21 @@
       padding: 14px;
     }
 
+    .rank-summary .mini-card.is-label-only {
+      justify-content: center;
+      min-height: 88px;
+      padding: 16px 18px;
+    }
+
+    .rank-summary .mini-card.is-label-only .card-title {
+      margin: 0;
+      font-size: 19px;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      -webkit-line-clamp: 1;
+      text-align: left;
+    }
+
     .rank-summary .card-title {
       margin-top: 2px;
       min-width: 0;
@@ -1336,6 +1755,94 @@
       align-items: start;
     }
 
+    .speed-board {
+      display: grid;
+      gap: 10px;
+      margin-top: 2px;
+      height: 100%;
+      align-content: start;
+    }
+
+    .speed-row {
+      display: grid;
+      grid-template-columns: minmax(0, 220px) minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(22, 24, 31, 0.06);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .speed-row:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(26, 29, 38, 0.08);
+      border-color: rgba(22, 24, 31, 0.1);
+    }
+
+    .speed-title {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .speed-title strong {
+      display: block;
+      min-width: 0;
+      font-size: 14px;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .speed-title span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .speed-track {
+      position: relative;
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(22, 24, 31, 0.08);
+      overflow: hidden;
+    }
+
+    .speed-fill {
+      height: 100%;
+      min-width: 8px;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(214, 244, 0, 0.88), rgba(112, 198, 244, 0.92));
+    }
+
+    .speed-value {
+      display: grid;
+      justify-items: end;
+      gap: 2px;
+      min-width: 88px;
+    }
+
+    .speed-value strong {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .speed-value span {
+      color: var(--muted);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      line-height: 1;
+    }
+
     .rank-summary .mini-label {
       color: var(--muted-soft);
       font-size: 11px;
@@ -1359,6 +1866,7 @@
       font-size: 12px;
       line-height: 1.45;
     }
+
 
     .feature-grid {
       display: grid;
@@ -2063,10 +2571,22 @@
       .template-stage,
       .analytics-grid,
       .feature-grid,
+      .overview-top,
+      .overview-left-signals,
       .status-split,
       .rank-summary,
       .ranking-grid,
       .ranking-row {
+        grid-template-columns: 1fr;
+      }
+
+      .status-bars {
+        grid-template-columns: 1fr;
+      }
+
+      .status-orbit,
+      .replay-meta,
+      .speed-bars {
         grid-template-columns: 1fr;
       }
 
@@ -2348,53 +2868,53 @@
 上线短但点击速度高"><div class="status-row-head"><strong>高速新模板</strong><span>3 / 54</span></div><div class="status-track"><div class="status-fill lime" style="width:5.6%"></div></div><div class="status-row-head"><span>上线短但点击速度高</span><span>6%</span></div></div><div class="status-row" data-tooltip="高复玩模板
 模板数 20 / 54
 占比 37%
-7 日内有更强重复点击"><div class="status-row-head"><strong>高复玩模板</strong><span>20 / 54</span></div><div class="status-track"><div class="status-fill blue" style="width:37.0%"></div></div><div class="status-row-head"><span>7 日内有更强重复点击</span><span>37%</span></div></div><div class="status-row" data-tooltip="高发帖承接
+重复点击更强"><div class="status-row-head"><strong>高复玩模板</strong><span>20 / 54</span></div><div class="status-track"><div class="status-fill blue" style="width:37.0%"></div></div><div class="status-row-head"><span>重复点击更强</span><span>37%</span></div></div><div class="status-row" data-tooltip="高发帖承接
 模板数 13 / 54
 占比 24%
 成功生成后更容易发帖"><div class="status-row-head"><strong>高发帖承接</strong><span>13 / 54</span></div><div class="status-track"><div class="status-fill orange" style="width:24.1%"></div></div><div class="status-row-head"><span>成功生成后更容易发帖</span><span>24%</span></div></div><div class="status-row" data-tooltip="观察池
 模板数 28 / 54
 占比 52%
 还没跑出明显信号"><div class="status-row-head"><strong>观察池</strong><span>28 / 54</span></div><div class="status-track"><div class="status-fill ink" style="width:51.9%"></div></div><div class="status-row-head"><span>还没跑出明显信号</span><span>52%</span></div></div></div></div><div class="card"><div class="card-head" style="position: relative;"><div><h3>复玩条码</h3></div></div><div class="barcode-panel"><div class="barcode-bars"><div class="barcode-bar is-hot" style="height:164px" data-tooltip="#1 8-Bit Morph
-7日复玩率 75.0%
+复玩率 75.0%
 重复点击用户 3
 点击 remix 7"><span>#1</span></div><div class="barcode-bar is-hot" style="height:146px" data-tooltip="#2 Monkey in the stands
-7日复玩率 66.7%
+复玩率 66.7%
 重复点击用户 2
 点击 remix 6"><span>#2</span></div><div class="barcode-bar is-hot" style="height:109px" data-tooltip="#3 I MADE A BEAT - Retro Music Production Desk
-7日复玩率 50.0%
+复玩率 50.0%
 重复点击用户 4
 点击 remix 12"><span>#3</span></div><div class="barcode-bar" style="height:109px" data-tooltip="#4 What is in the trunk?
-7日复玩率 50.0%
+复玩率 50.0%
 重复点击用户 2
 点击 remix 8"><span>#4</span></div><div class="barcode-bar" style="height:109px" data-tooltip="#5 Yellow car
-7日复玩率 50.0%
+复玩率 50.0%
 重复点击用户 3
 点击 remix 10"><span>#5</span></div><div class="barcode-bar" style="height:109px" data-tooltip="#6 When I become a character of Arknights
-7日复玩率 50.0%
+复玩率 50.0%
 重复点击用户 2
 点击 remix 11"><span>#6</span></div><div class="barcode-bar" style="height:109px" data-tooltip="#7 SPOOF
-7日复玩率 50.0%
+复玩率 50.0%
 重复点击用户 1
 点击 remix 3"><span>#7</span></div><div class="barcode-bar" style="height:109px" data-tooltip="#8 SpudSprout
-7日复玩率 50.0%
+复玩率 50.0%
 重复点击用户 1
 点击 remix 4"><span>#8</span></div><div class="barcode-bar" style="height:99px" data-tooltip="#9 Crimson Oath
-7日复玩率 45.5%
+复玩率 45.5%
 重复点击用户 5
 点击 remix 20"><span>#9</span></div><div class="barcode-bar" style="height:99px" data-tooltip="#10 Soul Fighter
-7日复玩率 45.5%
+复玩率 45.5%
 重复点击用户 5
 点击 remix 23"><span>#10</span></div><div class="barcode-bar" style="height:98px" data-tooltip="#11 Headphone Diary
-7日复玩率 44.8%
+复玩率 44.8%
 重复点击用户 13
 点击 remix 51"><span>#11</span></div><div class="barcode-bar" style="height:97px" data-tooltip="#12 Mood Radio
-7日复玩率 44.4%
+复玩率 44.4%
 重复点击用户 16
 点击 remix 62"><span>#12</span></div><div class="barcode-bar" style="height:97px" data-tooltip="#13 Codename: Black Armor Mobile Operation Archive
-7日复玩率 44.4%
+复玩率 44.4%
 重复点击用户 4
 点击 remix 17"><span>#13</span></div><div class="barcode-bar" style="height:90px" data-tooltip="#14 Electric Motion
-7日复玩率 41.2%
+复玩率 41.2%
 重复点击用户 14
 点击 remix 90"><span>#14</span></div></div><div class="barcode-meta"><div class="barcode-item"><span>#1</span><strong>8-Bit Morph</strong><span>75.0%</span></div><div class="barcode-item"><span>#2</span><strong>Monkey in the stands</strong><span>66.7%</span></div><div class="barcode-item"><span>#3</span><strong>I MADE A BEAT - Retro Music Production Desk</strong><span>50.0%</span></div></div></div></div></div></div><div class="overview-right"><div class="card"><div class="card-head"><div><h2>分榜排名</h2></div><div class="ranking-switch"><button type="button" data-ranking-view="template">模板</button><button type="button" data-ranking-view="user" class="is-active">用户</button><button type="button" data-ranking-view="overall">总排名</button></div></div><div class="ranking-scroll-shell"><div class="ranking-grid"><div class="ranking-row" data-cols="2"><a class="ranking-tile is-top" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/e654d0584a1f/v1/cover.png);" href="https://scratch-pad.echonlab.com/content/019fdaef-f7d5-7b3d-97ba-a0398ed47451" target="_blank" rel="noopener"><div class="ranking-badge">#1</div><div class="ranking-body"><h3 class="ranking-title">Coastal Interactive Audio Experience</h3><div class="ranking-metric">总 remix 4</div></div></a><a class="ranking-tile is-second" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/68c4d805-e26b-4b47-b5dd-5aa85e3ac6d4/v1/cover.png);" href="https://scratch-pad.echonlab.com/content/019fff7c-7136-702c-8605-b62748be3a13" target="_blank" rel="noopener"><div class="ranking-badge">#2</div><div class="ranking-body"><h3 class="ranking-title">Obsession</h3><div class="ranking-metric">总 remix 4</div></div></a></div><div class="ranking-row" data-cols="3"><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/595d7f921bbe/v8/cover.png);" href="https://scratch-pad.echonlab.com/content/019fe198-da30-7c33-9da3-ab8291338ad4" target="_blank" rel="noopener"><div class="ranking-badge">#3</div><div class="ranking-body"><h3 class="ranking-title">Retro Polaroid Camera</h3><div class="ranking-metric">总 remix 4</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/b045b0452a99/v1/cover.png);" href="https://scratch-pad.echonlab.com/content/019fc900-6765-76e5-8fa8-d7fe71c8d753" target="_blank" rel="noopener"><div class="ranking-badge">#4</div><div class="ranking-body"><h3 class="ranking-title">Giant Hundred Dollar Bill</h3><div class="ranking-metric">总 remix 3</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/ec61dfd41a7f/v5/cover.png);" href="https://scratch-pad.echonlab.com/content/019fd285-0d63-7324-934d-fbda715d30a1" target="_blank" rel="noopener"><div class="ranking-badge">#5</div><div class="ranking-body"><h3 class="ranking-title">Superhero AR Transformation</h3><div class="ranking-metric">总 remix 3</div></div></a></div><div class="ranking-row" data-cols="4"><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/75fa4136a09e/v4/cover.png);" href="https://scratch-pad.echonlab.com/content/019fdabb-f2d2-7c1f-ae46-3bde235f80a0" target="_blank" rel="noopener"><div class="ranking-badge">#6</div><div class="ranking-body"><h3 class="ranking-title">Untitled, Premium Cut</h3><div class="ranking-metric">总 remix 3</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/6808d7483015/v2/cover.png);" href="https://scratch-pad.echonlab.com/content/019fc051-ad19-75eb-9132-77daa7692864" target="_blank" rel="noopener"><div class="ranking-badge">#7</div><div class="ranking-body"><h3 class="ranking-title">Y2K Minnie Magazine Cover</h3><div class="ranking-metric">总 remix 3</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/5dbb726e451a/v1/cover.png);" href="https://scratch-pad.echonlab.com/content/019fdaf0-69a8-72f6-98a1-bf8358710368" target="_blank" rel="noopener"><div class="ranking-badge">#8</div><div class="ranking-body"><h3 class="ranking-title">Yarn Embroidery Crew Portrait</h3><div class="ranking-metric">总 remix 3</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/fbd104d84e27/v2/cover.png);" href="https://scratch-pad.echonlab.com/content/019fd10c-cb16-7410-b8df-48adc0caf8ee" target="_blank" rel="noopener"><div class="ranking-badge">#9</div><div class="ranking-body"><h3 class="ranking-title">🃏UNO fit check</h3><div class="ranking-metric">总 remix 2</div></div></a></div><div class="ranking-row" data-cols="4"><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/0420aae778c6/v1/cover.png);" href="https://scratch-pad.echonlab.com/content/019fcf6d-840d-7382-acd3-a1b5af73a6af" target="_blank" rel="noopener"><div class="ranking-badge">#10</div><div class="ranking-body"><h3 class="ranking-title">Beach Message for Cousin</h3><div class="ranking-metric">总 remix 2</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/f423a47e65d7/v2/cover.png);" href="https://scratch-pad.echonlab.com/content/019fbfbf-cdbb-70d9-8c09-58fdbc3a4f2e" target="_blank" rel="noopener"><div class="ranking-badge">#11</div><div class="ranking-body"><h3 class="ranking-title">Catnip APP</h3><div class="ranking-metric">总 remix 2</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/a3f872201c52/v1/cover.png);" href="https://scratch-pad.echonlab.com/content/019fdaf1-53ee-7638-9340-24dd0df41e74" target="_blank" rel="noopener"><div class="ranking-badge">#12</div><div class="ranking-body"><h3 class="ranking-title">Coastal Airmail Postcard</h3><div class="ranking-metric">总 remix 2</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/d1a62cff658f/v1/cover.png);" href="https://scratch-pad.echonlab.com/content/019fdb1d-785b-7794-b06a-c395e9ca1306" target="_blank" rel="noopener"><div class="ranking-badge">#13</div><div class="ranking-body"><h3 class="ranking-title">Coastal Music Experience</h3><div class="ranking-metric">总 remix 2</div></div></a></div><div class="ranking-row" data-cols="4"><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/778273d04674/v6/cover.png);" href="https://scratch-pad.echonlab.com/content/019fd587-935a-78e1-820e-c622744de1a3" target="_blank" rel="noopener"><div class="ranking-badge">#14</div><div class="ranking-body"><h3 class="ranking-title">hhj</h3><div class="ranking-metric">总 remix 2</div></div></a><a class="ranking-tile" style="background:linear-gradient(135deg, #8ad3ef 0%, #d3f1ff 100%);" href="https://scratch-pad.echonlab.com/content/01a0001d-5885-7660-be35-de6b48660802" target="_blank" rel="noopener"><div class="ranking-badge">#15</div><div class="ranking-body"><h3 class="ranking-title">Interactive Product Billboard</h3><div class="ranking-metric">总 remix 2</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/9f029d41-a471-4963-8670-81b57d6277fc/v1/cover.png);" href="https://scratch-pad.echonlab.com/content/019fbb97-be58-7d79-982c-1478e911402e" target="_blank" rel="noopener"><div class="ranking-badge">#16</div><div class="ranking-body"><h3 class="ranking-title">Mood Radio</h3><div class="ranking-metric">总 remix 2</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/9a7b5a311f69/v2/cover.png);" href="https://scratch-pad.echonlab.com/content/019fd246-8807-747c-a650-e944f1b68db0" target="_blank" rel="noopener"><div class="ranking-badge">#17</div><div class="ranking-body"><h3 class="ranking-title">Seven Magic Mountains Postcard</h3><div class="ranking-metric">总 remix 2</div></div></a></div><div class="ranking-row" data-cols="4"><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/a5c001daf2b1/v15/cover.png);" href="https://scratch-pad.echonlab.com/content/019ffe0c-133d-7271-8c0c-13c664315d33" target="_blank" rel="noopener"><div class="ranking-badge">#18</div><div class="ranking-body"><h3 class="ranking-title">Spectral Face Video Stack</h3><div class="ranking-metric">总 remix 2</div></div></a><a class="ranking-tile" style="background:linear-gradient(135deg, #8ad3ef 0%, #d3f1ff 100%);" href="https://scratch-pad.echonlab.com/content/01a008e6-3066-72c5-a9d3-c4866e4b3992" target="_blank" rel="noopener"><div class="ranking-badge">#19</div><div class="ranking-body"><h3 class="ranking-title">Spider Awakening</h3><div class="ranking-metric">总 remix 2</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/0b08adb815e0/v4/cover.png);" href="https://scratch-pad.echonlab.com/content/019fbfc1-1d4b-753b-82ac-c39455ec5c1f" target="_blank" rel="noopener"><div class="ranking-badge">#20</div><div class="ranking-body"><h3 class="ranking-title">Statement Weather Street Style</h3><div class="ranking-metric">总 remix 2</div></div></a><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/b1c27938b5e2/v5/cover.png);" href="https://scratch-pad.echonlab.com/content/019fb305-1365-7082-87e8-379449bc287a" target="_blank" rel="noopener"><div class="ranking-badge">#21</div><div class="ranking-body"><h3 class="ranking-title">Stranger Things CRT Tuner</h3><div class="ranking-metric">总 remix 2</div></div></a></div><div class="ranking-row" data-cols="2"><a class="ranking-tile" style="background-image:url(https://app-cdn.catnips.ai/catnip/apps/ad70195fa298/v1/cover.png);" href="https://scratch-pad.echonlab.com/content/019fdaf1-c8d6-79d2-b2d8-6227f29a8b7d" target="_blank" rel="noopener"><div class="ranking-badge">#22</div><div class="ranking-body"><h3 class="ranking-title">Unboxing Interactive Experience</h3><div class="ranking-metric">总 remix 2</div></div></a><a class="ranking-tile" style="background:linear-gradient(135deg, #8ad3ef 0%, #d3f1ff 100%);" href="https://scratch-pad.echonlab.com/content/01a008e8-c2f7-7ddc-9f3f-d640253fe033" target="_blank" rel="noopener"><div class="ranking-badge">#23</div><div class="ranking-body"><h3 class="ranking-title">Web Night Shot</h3><div class="ranking-metric">总 remix 2</div></div></a></div></div></div><div class="rank-summary"><div class="mini-card"><div class="eyebrow">用户第一</div><div class="card-title">Coastal Interactive Audio Experience</div><div class="mini-list"><div class="mini-row"><span>当前判断</span><span>总 remix 4</span></div></div></div><div class="mini-card"><div class="eyebrow">第二梯队</div><div class="card-title">Obsession</div><div class="mini-list"><div class="mini-row"><span>当前判断</span><span>总 remix 4</span></div></div></div><div class="mini-card"><div class="eyebrow">前十总量</div><div class="card-title">31</div><div class="mini-list"><div class="mini-row"><span>当前判断</span><span>当前用户侧 Top 10 累积</span></div></div></div></div></div></div></section></div></div></div>
 
@@ -2765,6 +3285,23 @@
           .replace(/"/g, '&quot;');
       }
 
+      function shortText(value, max) {
+        var text = String(value == null ? '' : value).trim();
+        if (!text) return '-';
+        if (!max || text.length <= max) return text;
+        return text.slice(0, Math.max(1, max - 1)) + '…';
+      }
+
+      function toneColor(tone) {
+        var map = {
+          lime: '#c8efff',
+          blue: '#9edfff',
+          orange: '#ff7440',
+          ink: '#ffd8cb'
+        };
+        return map[tone] || '#c7cad3';
+      }
+
       function safeKey(value) {
         return String(value || '').trim().toLowerCase();
       }
@@ -2884,7 +3421,7 @@
             board: 'template',
             board_label: '模板',
             title: item.template_name,
-            subtitle: shortId(item.template_id) + ' · 7日复玩率 ' + pct(item.replay_rate_7d),
+            subtitle: shortId(item.template_id) + ' · 复玩率 ' + pct(item.replay_rate_7d),
             url: templateDetailUrl(item.template_id),
             total_value: (item.success_users || 0) + (item.template_post_remix_events || 0),
             template_success_users: item.success_users || 0,
@@ -3200,7 +3737,7 @@
           topReplay: topReplay,
           topShare: topShare,
           metrics: [
-            { label: '模板总量', value: num(templateTotal), note: '模板带来的创作总量', delta: num(dataset.rows.length) + ' 个模板在跑', tone: 'lime' },
+            { label: '模板带来的创作总量', value: num(templateTotal), note: '当前窗口模板侧累计', delta: '', tone: 'lime' },
             { label: '模板创作占比', value: pct(templateShareOfCreation), note: '模板量 / 总创作量', delta: num(templateTotal) + ' / ' + num(totalCreation), tone: 'orange' },
             { label: '模板总使用量', value: num(templateUsageTotal), note: '点击 try now + 发布后二次 remix', delta: safeText(topRemix ? topRemix.template_name : '-') + ' 点击最高', tone: 'ink' },
             { label: '成功生成后发帖率', value: pct((conversionStats.post_rate_pct || 0) / 100), note: '成功生成用户里继续发帖', delta: num(conversionStats.successful_post_users || 0) + ' / ' + num(conversionStats.success_users || 0), tone: 'blue', featured: true },
@@ -3256,61 +3793,74 @@
         var topShare = snapshot.topShare;
         panel.className = 'panel overview-grid is-active';
         panel.innerHTML = [
-          '<div class="overview-left">',
-            '<div class="card">',
-              '<div class="card-head">',
-                '<div>',
-                  '<h2>总数据</h2>',
-                '</div>',
-              '</div>',
-              '<div class="summary-metrics">',
-                snapshot.metrics.map(function (metric) {
-                  return buildSummaryMetric(metric.label, metric.value, metric.note, metric.delta, metric.tone, metric.featured);
-                }).join(''),
-              '</div>',
-            '</div>',
-            '<div class="card">',
-              '<div class="card-head">',
-                '<div>',
-                  '<h2>活跃分布热区</h2>',
-                '</div>',
-                '<div class="ghost-pill">' + num(dataset.activityHeatmap.days.length) + ' 天 / 4 时段</div>',
-              '</div>',
-              '<div class="cadence-panel">' + renderActivityCadence(dataset) + '</div>',
-            '</div>',
-            '<div class="status-split">',
+          '<div class="overview-top">',
+            '<div class="overview-left">',
               '<div class="card">',
                 '<div class="card-head">',
                   '<div>',
-                    '<h3>模板状态分层</h3>',
+                    '<h2>总数据</h2>',
                   '</div>',
                 '</div>',
-                '<div class="status-bars">' + renderBusinessStatusBars(dataset) + '</div>',
+                '<div class="summary-metrics">',
+                  snapshot.metrics.map(function (metric) {
+                    return buildSummaryMetric(metric.label, metric.value, metric.note, metric.delta, metric.tone, metric.featured);
+                  }).join(''),
+                '</div>',
               '</div>',
               '<div class="card">',
                 '<div class="card-head">',
                   '<div>',
-                    '<h3>高复玩模板</h3>',
+                    '<h2>活跃分布热区</h2>',
                   '</div>',
+                  '<div class="ghost-pill">' + num(dataset.activityHeatmap.days.length) + ' 天 / 4 时段</div>',
                 '</div>',
-                '<div class="replay-panel">' + renderBusinessReplayPanel(dataset) + '</div>',
+                '<div class="cadence-panel">' + renderActivityCadence(dataset) + '</div>',
+              '</div>',
+              '<div class="overview-left-signals">',
+                '<div class="card signal-card">',
+                  '<div class="card-head">',
+                    '<div>',
+                      '<h3>模板状态分层</h3>',
+                    '</div>',
+                    '<div class="ghost-pill">4 类信号</div>',
+                  '</div>',
+                  '<div class="status-bars">' + renderBusinessStatusBars(dataset) + '</div>',
+                '</div>',
+                '<div class="card signal-card">',
+                  '<div class="card-head">',
+                    '<div>',
+                      '<h3>高复玩模板</h3>',
+                    '</div>',
+                    '<div class="ghost-pill">Top 6</div>',
+                  '</div>',
+                  '<div class="replay-panel">' + renderBusinessReplayPanel(dataset) + '</div>',
+                '</div>',
               '</div>',
             '</div>',
-          '</div>',
-          '<div class="overview-right">',
-            '<div class="card">',
-              '<div class="card-head">',
-                '<div>',
-                  '<h2>分榜排名</h2>',
+            '<div class="overview-right">',
+              '<div class="card">',
+                '<div class="card-head">',
+                  '<div>',
+                    '<h2>分榜排名</h2>',
+                  '</div>',
+                  '<div class="ranking-switch">',
+                    '<button type="button" data-ranking-view="template"' + (state.rankingView === 'template' ? ' class="is-active"' : '') + '>模板</button>',
+                    '<button type="button" data-ranking-view="user"' + (state.rankingView === 'user' ? ' class="is-active"' : '') + '>用户</button>',
+                    '<button type="button" data-ranking-view="overall"' + (state.rankingView === 'overall' ? ' class="is-active"' : '') + '>总排名</button>',
+                  '</div>',
                 '</div>',
-                '<div class="ranking-switch">',
-                  '<button type="button" data-ranking-view="template"' + (state.rankingView === 'template' ? ' class="is-active"' : '') + '>模板</button>',
-                  '<button type="button" data-ranking-view="user"' + (state.rankingView === 'user' ? ' class="is-active"' : '') + '>用户</button>',
-                  '<button type="button" data-ranking-view="overall"' + (state.rankingView === 'overall' ? ' class="is-active"' : '') + '>总排名</button>',
-                '</div>',
+                '<div class="ranking-scroll-shell">' + renderBusinessOverviewRankingPanel(dataset) + '</div>',
+                '<div class="rank-summary">' + renderBusinessRankingSummary(dataset, topRemix, topReplay, topShare) + '</div>',
               '</div>',
-              '<div class="ranking-scroll-shell">' + renderBusinessOverviewRankingPanel(dataset) + '</div>',
-              '<div class="rank-summary">' + renderBusinessRankingSummary(dataset, topRemix, topReplay, topShare) + '</div>',
+              '<div class="card signal-card">',
+                '<div class="card-head">',
+                  '<div>',
+                    '<h3>速度榜</h3>',
+                  '</div>',
+                  '<div class="ghost-pill">remix / 天</div>',
+                '</div>',
+                '<div class="speed-board">' + renderVelocityBoard(dataset) + '</div>',
+              '</div>',
             '</div>',
           '</div>'
         ].join('');
@@ -3318,6 +3868,7 @@
 
       function buildSummaryMetric(label, value, note, delta, tone, featured, compare) {
         var compareHtml = '';
+        var deltaHtml = delta ? '<div class="metric-delta ' + safeText(tone || '') + '">' + safeText(delta) + '</div>' : '';
         if (compare) {
           compareHtml = [
             '<div class="metric-compare">',
@@ -3333,7 +3884,7 @@
           '<div class="summary-metric' + (featured ? ' is-featured' : '') + '">',
             '<span>' + safeText(label) + '</span>',
             '<strong>' + safeText(value) + '</strong>',
-            '<div class="metric-delta ' + safeText(tone || '') + '">' + safeText(delta) + '</div>',
+            deltaHtml,
             '<p>' + safeText(note) + '</p>',
             compareHtml,
           '</div>'
@@ -3434,6 +3985,15 @@
         ].join('');
       }
 
+      function buildLabelInsight(label, tooltip) {
+        var tooltipAttr = tooltip ? ' data-tooltip="' + safeText(tooltip) + '"' : '';
+        return [
+          '<div class="mini-card is-label-only"' + tooltipAttr + '>',
+            '<div class="card-title">' + safeText(label) + '</div>',
+          '</div>'
+        ].join('');
+      }
+
       function buildPlainInsight(title, metric, note) {
         return [
           '<div class="mini-card">',
@@ -3500,9 +4060,9 @@
           ].join('');
         }
         return [
-          buildMiniInsight('点击最高', safeText(topRemix ? topRemix.template_name : '-'), topRemix ? 'click remix ' + num(topRemix.template_remix_events || 0) : '-'),
-          buildMiniInsight('复玩最高', safeText(topReplay ? topReplay.template_name : '-'), topReplay ? '7日复玩率 ' + pct(topReplay.replay_rate_7d || 0) + ' · ' + num(topReplay.replay_users || 0) + ' / ' + num(topReplay.template_remix_users || 0) : '-'),
-          buildMiniInsight('分享承接', safeText(topShare ? topShare.template_name : '-'), topShare ? '成功后分享 ' + pct(topShare.success_share_rate || 0) + ' · ' + num(topShare.share_users || 0) + ' / ' + num(topShare.usage_users || 0) : '-')
+          buildLabelInsight('点击最高模板', topRemix ? (topRemix.template_name || '-') + '\n当前窗口总 remix ' + num(topRemix.template_remix_events || 0) : ''),
+          buildLabelInsight('复玩率最高模板', topReplay ? (topReplay.template_name || '-') + '\n复玩率 ' + pct(topReplay.replay_rate_7d || 0, 0) + '\n复玩用户 ' + num(topReplay.replay_users || 0) + ' / ' + num(topReplay.template_remix_users || 0) : ''),
+          buildLabelInsight('分享承接最高模板', topShare ? (topShare.template_name || '-') + '\n分享承接 ' + pct(topShare.success_share_rate || 0, 0) + '\n分享用户 ' + num(topShare.share_users || 0) + ' / ' + num(topShare.success_users || 0) : '')
         ].join('');
       }
 
@@ -3686,6 +4246,44 @@
         ].join('');
       }
 
+      function renderVelocityBoard(dataset) {
+        var list = (dataset.rising || []).filter(function (item) {
+          return Number(item.template_remix_events_per_day || 0) > 0;
+        }).slice(0, 8);
+        if (!list.length) {
+          return '<div class="planning-note">该时间窗下暂无可用的速度数据。</div>';
+        }
+        var maxRate = list.reduce(function (max, item) {
+          return Math.max(max, Number(item.template_remix_events_per_day || 0));
+        }, 0) || 1;
+        var fastest = list[0];
+        return [
+          '<div class="speed-overview">',
+            '<a class="speed-hero" href="' + safeText(templateUrl(fastest.template_id)) + '" target="_blank" rel="noopener" data-tooltip="' + safeText((fastest.template_name || '-') + '\nremix/天 ' + num(fastest.template_remix_events_per_day || 0, 2) + '\n累计 remix ' + num(fastest.template_remix_events || 0) + '\n活跃 ' + num(fastest.active_days || 0) + ' 天') + '">',
+              '<div class="speed-hero-copy">',
+                '<strong>' + safeText(fastest.template_name || '-') + '</strong>',
+                '<span>当前窗口速度最高，直接看 remix / 时间。</span>',
+              '</div>',
+              '<div class="speed-hero-value"><strong>' + num(fastest.template_remix_events_per_day || 0, 2) + '</strong><span>remix/天</span></div>',
+            '</a>',
+            '<div class="speed-bars">' + list.map(function (item, index) {
+              var rate = Number(item.template_remix_events_per_day || 0);
+              var height = Math.max(28, rate / maxRate * 172);
+              var tooltip = safeText((item.template_name || '-') + '\nremix/天 ' + num(rate, 2) + '\n累计 remix ' + num(item.template_remix_events || 0) + '\n活跃 ' + num(item.active_days || 0) + ' 天');
+              return [
+                '<a class="speed-bar-col' + (index === 0 ? ' is-hot' : '') + '" href="' + safeText(templateUrl(item.template_id)) + '" target="_blank" rel="noopener" data-tooltip="' + tooltip + '">',
+                  '<div class="speed-bar-wrap">',
+                    '<div class="speed-bar" style="height:' + height.toFixed(1) + 'px"></div>',
+                  '</div>',
+                  '<div class="speed-bar-name">' + safeText(shortText(item.template_name || '-', 12)) + '</div>',
+                  '<div class="speed-bar-value">' + num(rate, 2) + '</div>',
+                '</a>'
+              ].join('');
+            }).join('') + '</div>',
+          '</div>'
+        ].join('');
+      }
+
       function buildUserRankingTile(item, index) {
         var image = item.image_url || imageForUserContent(item);
         var style = image ? 'background-image:url(' + image + ');' : 'background:' + templateMood(index) + ';';
@@ -3823,9 +4421,11 @@
           var share = item.count / total;
           return [
             '<div class="status-row" data-tooltip="' + safeText(item.label + '\n模板数 ' + num(item.count) + ' / ' + num(total) + '\n占比 ' + pct(share, 0) + '\n' + item.note) + '">',
-              '<div class="status-row-head"><strong>' + safeText(item.label) + '</strong><span>' + pct(share, 0) + '</span></div>',
+              '<div class="status-row-head">',
+                '<div class="status-row-copy"><strong>' + safeText(item.label) + '</strong><span>' + safeText(item.note) + '</span></div>',
+                '<div class="status-row-stats"><strong>' + pct(share, 0) + '</strong><span>' + num(item.count) + ' 个</span></div>',
+              '</div>',
               '<div class="status-track"><div class="status-fill ' + safeText(item.tone) + '" style="width:' + (share * 100).toFixed(1) + '%"></div></div>',
-              '<div class="status-row-foot"><span>' + num(item.count) + '</span></div>',
             '</div>'
           ].join('');
         }).join('');
@@ -3843,7 +4443,7 @@
           {
             label: '高复玩模板',
             count: dataset.rows.filter(function (item) { return Number(item.replay_rate_7d || 0) >= 0.3; }).length,
-            note: '7 日内有更强重复点击',
+            note: '重复点击更强',
             tone: 'blue'
           },
           {
@@ -3863,16 +4463,33 @@
             tone: 'ink'
           }
         ];
-        return states.map(function (item) {
+        var deg = 0;
+        var ringStops = states.map(function (item) {
           var share = item.count / total;
-          return [
-            '<div class="status-row" data-tooltip="' + safeText(item.label + '\n模板数 ' + num(item.count) + ' / ' + num(total) + '\n占比 ' + pct(share, 0) + '\n' + item.note) + '">',
-              '<div class="status-row-head"><strong>' + safeText(item.label) + '</strong><span>' + pct(share, 0) + '</span></div>',
-              '<div class="status-track"><div class="status-fill ' + safeText(item.tone) + '" style="width:' + (share * 100).toFixed(1) + '%"></div></div>',
-              '<div class="status-row-foot"><span>' + num(item.count) + '</span></div>',
-            '</div>'
-          ].join('');
-        }).join('');
+          var start = deg;
+          deg += share * 360;
+          return toneColor(item.tone) + ' ' + start.toFixed(2) + 'deg ' + deg.toFixed(2) + 'deg';
+        }).join(', ');
+        return [
+          '<div class="status-orbit">',
+            '<div class="status-ring-shell">',
+              '<div class="status-ring" style="background:conic-gradient(' + ringStops + ')">',
+                '<div class="status-ring-core"><div><strong>' + num(total) + '</strong><span>模板源</span></div></div>',
+              '</div>',
+              '<div class="status-chip-row">' + states.map(function (item) {
+                var share = item.count / total;
+                var tooltip = safeText(item.label + '\n模板数 ' + num(item.count) + ' / ' + num(total) + '\n占比 ' + pct(share, 0) + '\n' + item.note);
+                return [
+                  '<a class="status-chip" href="javascript:void(0)" data-tooltip="' + tooltip + '">',
+                    '<span class="status-chip-dot status-dot ' + safeText(item.tone) + '"></span>',
+                    '<span class="status-chip-label">' + safeText(item.label) + '</span>',
+                  '</a>'
+                ].join('');
+              }).join('') + '</div>',
+              '<div class="status-ring-note">悬浮查看占比与模板数</div>',
+            '</div>',
+          '</div>'
+        ].join('');
       }
 
       function renderReplayBarcode(dataset) {
@@ -3891,19 +4508,26 @@
       }
 
       function renderBusinessReplayPanel(dataset) {
-        var replayList = dataset.replay.slice(0, 8);
+        var replayList = dataset.replay.slice(0, 6);
+        if (!replayList.length) {
+          return '<div class="planning-note">该时间窗下暂无可用的复玩数据。</div>';
+        }
+        var maxReplayRate = replayList.reduce(function (max, item) {
+          return Math.max(max, Number(item.replay_rate_7d || 0));
+        }, 0) || 1;
         return [
-          '<div class="replay-headline"><strong>7日复玩</strong></div>',
-          '<div class="leaderboard-list replay-list">' + replayList.map(function (item, index) {
-            return leaderboardItem(
-              index,
-              item,
-              pct(item.replay_rate_7d || 0),
-              '7日复玩',
-              num(item.replay_users || 0) + ' / ' + num(item.template_remix_users || 0) + ' · remix ' + num(item.template_remix_events || 0),
-              '',
-              ''
-            );
+          '<div class="replay-visual">' + replayList.map(function (item, index) {
+            var rate = Number(item.replay_rate_7d || 0);
+            var height = Math.max(28, rate / maxReplayRate * 164);
+            var displayRate = pct(rate, 0);
+            var tooltip = safeText((item.template_name || '-') + '\n复玩率 ' + displayRate + '\n复玩用户 ' + num(item.replay_users || 0) + ' / ' + num(item.template_remix_users || 0) + '\nremix ' + num(item.template_remix_events || 0));
+            return [
+              '<a class="replay-column' + (index === 0 ? ' is-hot' : '') + '" href="' + safeText(templateUrl(item.template_id)) + '" target="_blank" rel="noopener" data-tooltip="' + tooltip + '">',
+                '<div class="replay-bar" style="height:' + height.toFixed(1) + 'px"></div>',
+                '<div class="replay-column-rate">' + displayRate + '</div>',
+                '<div class="replay-column-title">' + safeText(shortText(item.template_name || '-', 9)) + '</div>',
+              '</a>'
+            ].join('');
           }).join('') + '</div>'
         ].join('');
       }
@@ -3925,7 +4549,7 @@
               '<div class="feature-stats">',
                 '<span class="stat-chip">成功 ' + num(item.success_users) + '</span>',
                 '<span class="stat-chip">remix ' + num(item.template_remix_events) + '</span>',
-                '<span class="stat-chip">7日复玩率 ' + pct(item.repeat_try_now_rate_7d || item.replay_rate_7d) + '</span>',
+                '<span class="stat-chip">复玩率 ' + pct(item.repeat_try_now_rate_7d || item.replay_rate_7d) + '</span>',
               '</div>',
             '</div>',
           '</article>'
@@ -4288,7 +4912,7 @@
             note: 'PostHog 成功后分享'
           },
           {
-            label: '7日复玩率',
+            label: '复玩率',
             value: pct(totals.replay_rate_7d || 0),
             note: num(totals.repeat_try_now_users_7d || 0) + ' / ' + num(totals.template_remix_users || 0)
           },
