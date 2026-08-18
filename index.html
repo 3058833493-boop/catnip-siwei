@@ -1080,31 +1080,40 @@
 
     .status-row {
       display: grid;
-      gap: 8px;
+      gap: 4px;
     }
 
     .status-row-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      font-size: 12px;
+      gap: 6px;
+      font-size: 10px;
     }
 
     .status-row-head strong {
-      font-size: 13px;
+      font-size: 11px;
       letter-spacing: -0.02em;
     }
 
     .status-row-head span {
       color: var(--muted);
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 10px;
+    }
+
+    .status-row-foot {
+      display: flex;
+      justify-content: flex-end;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      line-height: 1;
     }
 
     .status-track {
       width: 100%;
-      height: 10px;
+      height: 8px;
       border-radius: 999px;
       background: rgba(22, 24, 31, 0.06);
       overflow: hidden;
@@ -1893,26 +1902,25 @@
 
     .leaderboard-item {
       display: grid;
-      grid-template-columns: 40px minmax(0, 1fr) auto;
-      gap: 10px;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      gap: 6px;
       align-items: center;
-      padding: 9px 12px;
-      border-radius: 14px;
+      padding: 7px 8px;
+      border-radius: 10px;
       background: rgba(255, 255, 255, 0.74);
       border: 1px solid rgba(22, 24, 31, 0.05);
     }
 
     .leaderboard-rank {
       font-family: var(--font-accent);
-      font-size: 18px;
+      font-size: 13px;
       color: var(--muted);
     }
 
     .leaderboard-main strong {
       display: block;
-      font-size: 14px;
+      font-size: 12px;
       letter-spacing: -0.02em;
-      margin-bottom: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1921,11 +1929,16 @@
     .leaderboard-main span {
       display: block;
       color: var(--muted);
-      font-size: 11px;
-      line-height: 1.25;
+      font-size: 9px;
+      line-height: 1.1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .leaderboard-main span:empty,
+    .leaderboard-metric span:empty {
+      display: none;
     }
 
     .leaderboard-metric {
@@ -1934,16 +1947,16 @@
 
     .leaderboard-metric strong {
       display: block;
-      font-size: 19px;
+      font-size: 15px;
       line-height: 0.95;
       letter-spacing: -0.04em;
     }
 
     .leaderboard-metric span {
       display: block;
-      margin-top: 4px;
+      margin-top: 1px;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 9px;
       font-family: var(--font-mono);
     }
 
@@ -3810,9 +3823,9 @@
           var share = item.count / total;
           return [
             '<div class="status-row" data-tooltip="' + safeText(item.label + '\n模板数 ' + num(item.count) + ' / ' + num(total) + '\n占比 ' + pct(share, 0) + '\n' + item.note) + '">',
-              '<div class="status-row-head"><strong>' + safeText(item.label) + '</strong><span>' + num(item.count) + ' / ' + num(total) + '</span></div>',
+              '<div class="status-row-head"><strong>' + safeText(item.label) + '</strong><span>' + pct(share, 0) + '</span></div>',
               '<div class="status-track"><div class="status-fill ' + safeText(item.tone) + '" style="width:' + (share * 100).toFixed(1) + '%"></div></div>',
-              '<div class="status-row-head"><span>' + safeText(item.note) + '</span><span>' + pct(share, 0) + '</span></div>',
+              '<div class="status-row-foot"><span>' + num(item.count) + '</span></div>',
             '</div>'
           ].join('');
         }).join('');
@@ -3854,9 +3867,9 @@
           var share = item.count / total;
           return [
             '<div class="status-row" data-tooltip="' + safeText(item.label + '\n模板数 ' + num(item.count) + ' / ' + num(total) + '\n占比 ' + pct(share, 0) + '\n' + item.note) + '">',
-              '<div class="status-row-head"><strong>' + safeText(item.label) + '</strong><span>' + num(item.count) + ' / ' + num(total) + '</span></div>',
+              '<div class="status-row-head"><strong>' + safeText(item.label) + '</strong><span>' + pct(share, 0) + '</span></div>',
               '<div class="status-track"><div class="status-fill ' + safeText(item.tone) + '" style="width:' + (share * 100).toFixed(1) + '%"></div></div>',
-              '<div class="status-row-head"><span>' + safeText(item.note) + '</span><span>' + pct(share, 0) + '</span></div>',
+              '<div class="status-row-foot"><span>' + num(item.count) + '</span></div>',
             '</div>'
           ].join('');
         }).join('');
@@ -3867,22 +3880,30 @@
         var topPublish = dataset.topPublish[0];
         var topShare = dataset.topShare[0];
         var items = [
-          topUsage ? signalListItem('用得最多', topUsage.template_name, num(topUsage.usage_users || 0), '使用人数', '当前使用人数最高 · ' + safeText(topUsage.sample_label || '观察中'), templateUrl(topUsage.template_id)) : '',
-          topPublish ? signalListItem('最愿意发', topPublish.template_name, pct(topPublish.publish_rate || 0), '发帖率', '发帖承接最好 · ' + num(topPublish.publish_users || 0) + ' / ' + num(topPublish.usage_users || 0), templateUrl(topPublish.template_id)) : '',
-          topShare ? signalListItem('最愿意分享', topShare.template_name, pct(topShare.share_after_post_rate || 0), '分享率', '分享承接最好 · ' + num(topShare.share_users || 0) + ' / ' + num(topShare.publish_users || 0), templateUrl(topShare.template_id)) : ''
+          topUsage ? signalListItem('用得最多', topUsage.template_name, num(topUsage.usage_users || 0), '使用人数', '当前使用人数最高 · ' + safeText(topUsage.sample_label || '观察中'), templateUrl(topUsage.template_id), '', '') : '',
+          topPublish ? signalListItem('最愿意发', topPublish.template_name, pct(topPublish.publish_rate || 0), '发帖率', '发帖承接最好 · ' + num(topPublish.publish_users || 0) + ' / ' + num(topPublish.usage_users || 0), templateUrl(topPublish.template_id), '', '') : '',
+          topShare ? signalListItem('最愿意分享', topShare.template_name, pct(topShare.share_after_post_rate || 0), '分享率', '分享承接最好 · ' + num(topShare.share_users || 0) + ' / ' + num(topShare.publish_users || 0), templateUrl(topShare.template_id), '', '') : ''
         ].filter(Boolean);
         return [
-          '<div class="replay-headline"><strong>传播价值拆解</strong><span>这里只看三件事：有没有人真的用、会不会继续发、发出去后会不会继续分享。</span></div>',
+          '<div class="replay-headline"><strong>传播价值拆解</strong></div>',
           '<div class="leaderboard-list replay-list">' + items.join('') + '</div>'
         ].join('');
       }
 
       function renderBusinessReplayPanel(dataset) {
-        var replayList = dataset.replay.slice(0, 14);
+        var replayList = dataset.replay.slice(0, 8);
         return [
-          '<div class="replay-headline"><strong>7日复玩</strong><span>按当前窗口统计同一模板的重复点击率，帮助理解模板心智和回流能力。</span></div>',
+          '<div class="replay-headline"><strong>7日复玩</strong></div>',
           '<div class="leaderboard-list replay-list">' + replayList.map(function (item, index) {
-            return leaderboardItem(index, item, pct(item.replay_rate_7d || 0), '7日复玩', num(item.replay_users || 0) + ' / ' + num(item.template_remix_users || 0) + ' · remix ' + num(item.template_remix_events || 0));
+            return leaderboardItem(
+              index,
+              item,
+              pct(item.replay_rate_7d || 0),
+              '7日复玩',
+              num(item.replay_users || 0) + ' / ' + num(item.template_remix_users || 0) + ' · remix ' + num(item.template_remix_events || 0),
+              '',
+              ''
+            );
           }).join('') + '</div>'
         ].join('');
       }
@@ -4305,33 +4326,44 @@
         }).join('');
       }
 
+      function formatSampleRate(rate, numerator, denominator) {
+        return denominator ? pct(rate) : '无样本';
+      }
+
+      function lifetimeSuccessRate(totals) {
+        if (!totals) return 0;
+        if (Number.isFinite(Number(totals.success_rate)) && Number(totals.success_rate) > 0) {
+          return Number(totals.success_rate);
+        }
+        return totals.template_remix_events ? Number(totals.success_events || 0) / Number(totals.template_remix_events || 1) : 0;
+      }
+
       function renderTemplateRanking(dataset) {
         var list = sortedTemplateList(dataset);
+        var lifetimeMap = {};
         return '<div class="rank-list template-rank-list">' + list.map(function (item, index) {
           var image = imageForTemplate(item);
           var thumbStyle = image ? 'background-image:url(' + image + ');' : 'background:' + templateMood(index) + ';';
           var isActive = item.template_id === state.activeTemplateId;
-          var lifetime = isActive ? getTemplateLifetimePackage(item.template_id) : null;
+          var lifetime = lifetimeMap[item.template_id] || getTemplateLifetimePackage(item.template_id);
+          lifetimeMap[item.template_id] = lifetime;
           var lifetimeTotals = lifetime ? lifetime.totals || {} : {};
-          var currentSuccessRate = item.template_remix_users ? (item.success_users / item.template_remix_users) : 0;
-          var lifetimeSuccessRate = lifetimeTotals.template_remix_users ? ((lifetimeTotals.success_users || 0) / (lifetimeTotals.template_remix_users || 1)) : (lifetimeTotals.success_rate || 0);
+          var lifetimeSuccessRateValue = lifetimeSuccessRate(lifetimeTotals);
           var summary = '';
           var valueLabel = '';
+          var valueText = '';
           if (state.templateSort === 'remix') {
-            summary = isActive
-              ? '累计 remix ' + num(lifetimeTotals.template_remix_events || 0) + ' · 成功 ' + num(lifetimeTotals.success_users || 0)
-              : '当前窗 remix ' + num(item.template_remix_events || 0) + ' · 成功 ' + num(item.success_users || 0);
+            summary = '累计 remix ' + num(lifetimeTotals.template_remix_events || 0) + ' · 成功 ' + num(lifetimeTotals.success_users || 0);
             valueLabel = 'remix';
+            valueText = num(lifetimeTotals.template_remix_events || 0);
           } else if (state.templateSort === 'success') {
-            summary = isActive
-              ? '累计成功率 ' + pct(lifetimeSuccessRate) + ' · ' + num(lifetimeTotals.success_users || 0) + ' / ' + num(lifetimeTotals.template_remix_users || 0)
-              : '当前窗成功率 ' + pct(currentSuccessRate) + ' · ' + num(item.success_users || 0) + ' / ' + num(item.template_remix_users || 0);
+            summary = '累计成功率 ' + formatSampleRate(lifetimeSuccessRateValue, lifetimeTotals.success_events || 0, lifetimeTotals.template_remix_events || 0) + ' · ' + num(lifetimeTotals.success_events || 0) + ' / ' + num(lifetimeTotals.template_remix_events || 0);
             valueLabel = '成功率';
+            valueText = formatSampleRate(lifetimeSuccessRateValue, lifetimeTotals.success_events || 0, lifetimeTotals.template_remix_events || 0);
           } else {
-            summary = isActive
-              ? '累计价值 ' + num(lifetimeTotals.value_output || 0) + ' · 发帖率 ' + pct(lifetimeTotals.publish_rate || lifetimeTotals.post_after_success_rate || 0)
-              : '当前窗价值 ' + num(item.value_output || 0) + ' · 发帖率 ' + pct(item.publish_rate || item.post_after_success_rate || 0);
+            summary = '累计价值 ' + num(lifetimeTotals.value_output || 0) + ' · 发帖率 ' + pct(lifetimeTotals.publish_rate || lifetimeTotals.post_after_success_rate || 0);
             valueLabel = '价值';
+            valueText = num(lifetimeTotals.value_output || 0);
           }
           return [
             '<button class="rank-item' + (isActive ? ' is-active' : '') + '" type="button" data-template-pick="' + safeText(item.template_id) + '">',
@@ -4342,7 +4374,7 @@
                 '<span>' + safeText(summary) + '</span>',
                 isActive ? '<div class="rank-item-meta">' + safeText(activeTemplateCopy(Object.assign({}, item, lifetimeTotals))) + '</div>' : '',
               '</div>',
-              isActive ? '' : '<div class="rank-value"><strong>' + safeText(state.templateSort === 'success' ? pct(currentSuccessRate) : num(state.templateSort === 'remix' ? (item.template_remix_events || 0) : (item.value_output || 0))) + '</strong><span>' + safeText(valueLabel) + '</span></div>',
+              isActive ? '' : '<div class="rank-value"><strong>' + safeText(valueText) + '</strong><span>' + safeText(valueLabel) + '</span></div>',
             '</button>'
           ].join('');
         }).join('') + '</div>';
@@ -4382,13 +4414,35 @@
       }
 
       function sortedTemplateList(dataset) {
+        var lifetimeMap = {};
+        function totalsFor(item) {
+          if (!lifetimeMap[item.template_id]) {
+            lifetimeMap[item.template_id] = getTemplateLifetimePackage(item.template_id).totals || {};
+          }
+          return lifetimeMap[item.template_id];
+        }
         var map = {
-          value: function (a, b) { return (b.value_output - a.value_output) || (b.publish_rate - a.publish_rate) || (b.template_remix_events - a.template_remix_events); },
-          remix: function (a, b) { return (b.template_remix_events - a.template_remix_events) || (b.success_users - a.success_users); },
+          value: function (a, b) {
+            var aTotals = totalsFor(a);
+            var bTotals = totalsFor(b);
+            return (Number(bTotals.value_output || 0) - Number(aTotals.value_output || 0))
+              || (Number(bTotals.publish_rate || bTotals.post_after_success_rate || 0) - Number(aTotals.publish_rate || aTotals.post_after_success_rate || 0))
+              || (Number(bTotals.template_remix_events || 0) - Number(aTotals.template_remix_events || 0));
+          },
+          remix: function (a, b) {
+            var aTotals = totalsFor(a);
+            var bTotals = totalsFor(b);
+            return (Number(bTotals.template_remix_events || 0) - Number(aTotals.template_remix_events || 0))
+              || (Number(bTotals.success_users || 0) - Number(aTotals.success_users || 0));
+          },
           success: function (a, b) {
-            var aRate = a.template_remix_users ? (a.success_users / a.template_remix_users) : 0;
-            var bRate = b.template_remix_users ? (b.success_users / b.template_remix_users) : 0;
-            return (bRate - aRate) || (b.success_users - a.success_users) || (b.template_remix_events - a.template_remix_events);
+            var aTotals = totalsFor(a);
+            var bTotals = totalsFor(b);
+            var aRate = lifetimeSuccessRate(aTotals);
+            var bRate = lifetimeSuccessRate(bTotals);
+            return (bRate - aRate)
+              || (Number(bTotals.success_events || 0) - Number(aTotals.success_events || 0))
+              || (Number(bTotals.template_remix_events || 0) - Number(aTotals.template_remix_events || 0));
           }
         };
         return dataset.rows.slice().sort(map[state.templateSort] || map.value);
@@ -4454,26 +4508,30 @@
         }
       }
 
-      function leaderboardItem(index, item, value, label, meta) {
+      function leaderboardItem(index, item, value, label, meta, displayMeta, displayLabel) {
+        var visibleMeta = displayMeta == null ? meta : displayMeta;
+        var visibleLabel = displayLabel == null ? label : displayLabel;
         var tooltip = safeText((item.template_name || '-') + '\n' + String(meta || '') + '\n' + String(value || '-') + ' ' + String(label || ''));
         return [
           '<div class="leaderboard-item" data-tooltip="' + tooltip + '">',
             '<div class="leaderboard-rank">#' + (index + 1) + '</div>',
-            '<div class="leaderboard-main"><strong><a href="' + safeText(templateUrl(item.template_id)) + '" target="_blank" rel="noopener">' + safeText(item.template_name) + '</a></strong><span>' + safeText(meta) + '</span></div>',
-            '<div class="leaderboard-metric"><strong>' + safeText(value) + '</strong><span>' + safeText(label) + '</span></div>',
+            '<div class="leaderboard-main"><strong><a href="' + safeText(templateUrl(item.template_id)) + '" target="_blank" rel="noopener">' + safeText(item.template_name) + '</a></strong><span>' + safeText(visibleMeta || '') + '</span></div>',
+            '<div class="leaderboard-metric"><strong>' + safeText(value) + '</strong><span>' + safeText(visibleLabel || '') + '</span></div>',
           '</div>'
         ].join('');
       }
 
-      function signalListItem(tag, title, value, label, meta, href) {
+      function signalListItem(tag, title, value, label, meta, href, displayMeta, displayLabel) {
+        var visibleMeta = displayMeta == null ? meta : displayMeta;
+        var visibleLabel = displayLabel == null ? label : displayLabel;
         var tooltip = safeText(String(title || '-') + '\n' + String(meta || '') + '\n' + String(value || '-') + ' ' + String(label || ''));
         var open = href ? '<a class="leaderboard-item" href="' + safeText(href) + '" target="_blank" rel="noopener" data-tooltip="' + tooltip + '">' : '<div class="leaderboard-item" data-tooltip="' + tooltip + '">';
         var close = href ? '</a>' : '</div>';
         return [
           open,
             '<div class="leaderboard-rank">' + safeText(tag) + '</div>',
-            '<div class="leaderboard-main"><strong>' + safeText(title || '-') + '</strong><span>' + safeText(meta || '-') + '</span></div>',
-            '<div class="leaderboard-metric"><strong>' + safeText(value || '-') + '</strong><span>' + safeText(label || '-') + '</span></div>',
+            '<div class="leaderboard-main"><strong>' + safeText(title || '-') + '</strong><span>' + safeText(visibleMeta || '') + '</span></div>',
+            '<div class="leaderboard-metric"><strong>' + safeText(value || '-') + '</strong><span>' + safeText(visibleLabel || '') + '</span></div>',
           close
         ].join('');
       }
