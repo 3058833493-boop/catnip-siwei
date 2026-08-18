@@ -4881,7 +4881,7 @@
             '<div class="template-command">',
               '<div>',
                 '',
-                '<h3>右侧点模板，左侧只留累计和趋势。</h3>',
+                '<h3>右侧点模板，左侧只留累计和日趋势。</h3>',
                 '<p>封面预览移除，主空间直接让给生命周期折线。</p>',
               '</div>',
               '<div class="chips">',
@@ -4897,7 +4897,7 @@
                   '<div>',
                     '',
                     '<h2>模板折线趋势</h2>',
-                    '<p>从上线日累计到 08-18，直接看真实生命周期涨幅。</p>',
+                    '<p>从上线日逐天展开，直接看真实生命周期波动。</p>',
                   '</div>',
                 '</div>',
                 '<div id="chart-template-scatter" class="chart-shell"></div>',
@@ -5304,7 +5304,7 @@
         if (!active) return;
         var lifetime = getTemplateLifetimePackage(active.template_id);
         var labels = lifetime.timeline.map(function (item) { return item.day || item.label; });
-        var cumulativeData = lifetime.timeline.map(function (item) { return item.cumulative_remix || 0; });
+        var dailyData = lifetime.timeline.map(function (item) { return item.window_remix || 0; });
         chart.setOption({
           animationDuration: 500,
           legend: {
@@ -5317,8 +5317,7 @@
               return [
                 '<b>' + safeText(active.template_name) + '</b>',
                 safeText(point.day || params.axisValueLabel || params.name),
-                '当日 remix ' + num(point.window_remix),
-                '累计 remix ' + num(point.cumulative_remix)
+                '当日 remix ' + num(point.window_remix)
               ].join('<br/>');
             }
           },
@@ -5342,16 +5341,16 @@
           yAxis: [
             {
               type: 'value',
-              name: '累计 remix',
+              name: '当日 remix',
               nameTextStyle: { color: '#767982', fontFamily: 'GeistMono' },
               splitLine: { lineStyle: { color: 'rgba(22,24,31,0.08)' } },
               axisLabel: { color: '#767982' }
             }
           ],
           series: [{
-            name: '累计 remix',
+            name: '当日 remix',
             type: 'line',
-            data: cumulativeData,
+            data: dailyData,
             smooth: false,
             symbolSize: 10,
             lineStyle: { width: 3, color: '#d6f400' },
@@ -5463,11 +5462,11 @@
         Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function (button) {
           button.classList.toggle('is-active', button.getAttribute('data-mode') === state.mode);
         });
-        if (windowPill) windowPill.textContent = isTemplate ? '上线以来累计' : activeLabel.replace(' 至 ', ' → ');
+        if (windowPill) windowPill.textContent = isTemplate ? '上线以来逐日' : activeLabel.replace(' 至 ', ' → ');
         if (headline) headline.textContent = isPlanning ? 'TCS 传播价值' : (isTemplate ? '模板详情' : '模板总览');
         if (subcopy) subcopy.textContent = isPlanning
           ? '单独看模板的传播价值，不和业务总盘混在一起。'
-          : (isTemplate && activeTemplate ? safeText(activeTemplate.template_name) + ' · 上线以来累计' : activeLabel);
+          : (isTemplate && activeTemplate ? safeText(activeTemplate.template_name) + ' · 上线以来逐日趋势' : activeLabel);
         if (jump) {
           jump.textContent = '打开源链接';
         }
