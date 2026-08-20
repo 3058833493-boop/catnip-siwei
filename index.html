@@ -3739,6 +3739,9 @@
       var LIVE_MIN_DAY = '2026-08-01';
       var LIVE_FALLBACK_TODAY = '2026-08-20';
       var DAY_MS = 24 * 60 * 60 * 1000;
+      var AUTO_REFRESH_MS = 5 * 60 * 1000;
+      var AUTO_REFRESH_TICK_MS = 60 * 1000;
+      var FOCUS_REFRESH_STALE_MS = 2 * 60 * 1000;
 
       var state = {
         mode: 'overview',
@@ -3757,6 +3760,12 @@
         sourceStatus: '加载静态数据包',
         sourceTrace: null,
         isRefreshing: false,
+        refreshReason: '',
+        lastRefreshAttemptAt: 0,
+        lastRefreshFinishedAt: 0,
+        lastLiveGeneratedAt: '',
+        autoRefreshTimer: null,
+        autoRefreshBound: false,
         charts: {},
         resizeBound: false,
         tooltipBound: false,
@@ -3953,6 +3962,32 @@
         var date = new Date(value);
         if (Number.isNaN(date.getTime())) return String(value);
         return date.toISOString().slice(0, 16).replace('T', ' ');
+      }
+
+      function fmtLocalTime(value) {
+        if (!value) return '-';
+        var date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '-';
+        return String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+      }
+
+      function refreshReasonText() {
+        if (state.refreshReason === 'auto') return '自动刷新 PostHog';
+        if (state.refreshReason === 'focus') return '回到页面后刷新 PostHog';
+        return '正在刷新 PostHog';
+      }
+
+      function autoRefreshSuffix() {
+        return ' · 每 5 分钟自动刷新';
+      }
+
+      function shouldAutoRefresh(staleMs) {
+        if (state.isRefreshing) return false;
+        if (document.visibilityState === 'hidden') return false;
+        if (!state.datasetMap) return false;
+        var lastAttempt = state.lastRefreshAttemptAt || state.lastRefreshFinishedAt;
+        if (!lastAttempt) return true;
+        return Date.now() - lastAttempt >= staleMs;
       }
 
       function safeText(value) {
@@ -4170,11 +4205,21 @@
         try {
           var liveData = await fetchLiveSource();
           state.sourceMode = 'live';
-          state.sourceStatus = 'PostHog live · 业务看板口径 · ' + fmtDateTime(liveData.generated_at);
+          state.lastLiveGeneratedAt = liveData.generated_at || '';
+          state.lastRefreshFinishedAt = Date.now();
+          state.lastRefreshAttemptAt = state.lastRefreshFinishedAt;
+          state.sourceStatus = 'PostHog live · 业务看板口径 · ' + fmtDateTime(liveData.generated_at) + autoRefreshSuffix();
           state.sourceTrace = liveData.API_TRACE || null;
           return mergeLiveSource(staticData, liveData);
         } catch (error) {
           state.sourceMode = 'error';
+          if (options && options.keepCurrentOnError && state.datasetMap) {
+            state.sourceStatus = 'API 刷新失败 · 保留上次数据 ' + fmtLocalTime(state.lastRefreshFinishedAt) + ' · ' + (error && error.message ? error.message : error);
+            state.sourceTrace = null;
+            return null;
+          }
+          state.lastRefreshFinishedAt = Date.now();
+          state.lastRefreshAttemptAt = state.lastRefreshFinishedAt;
           state.sourceStatus = '静态包兜底 · ' + (error && error.message ? error.message : error);
           state.sourceTrace = null;
           return staticData;
@@ -6585,7 +6630,9 @@
         var refresh = document.getElementById('refresh-live-data');
         if (refresh) {
           refresh.disabled = state.isRefreshing;
-          refresh.onclick = refreshLiveData;
+          refresh.onclick = function () {
+            refreshLiveData('manual');
+          };
         }
 
         var startInput = document.getElementById('date-range-start');
@@ -6602,7 +6649,7 @@
             return;
           }
           state.windowKey = 'current_17d';
-          refreshLiveData();
+          refreshLiveData('manual');
         };
         [startInput, endInput].forEach(function (input) {
           if (!input) return;
@@ -6674,7 +6721,7 @@
         if (sourceStatus) {
           var sourceClass = state.sourceMode === 'live' ? 'is-live' : (state.sourceMode === 'error' ? 'is-error' : 'is-static');
           sourceStatus.className = 'source-status ' + sourceClass;
-          sourceStatus.innerHTML = '<span class="source-dot"></span><span>' + safeText(state.isRefreshing ? '正在刷新 PostHog' : state.sourceStatus) + '</span>';
+          sourceStatus.innerHTML = '<span class="source-dot"></span><span>' + safeText(state.isRefreshing ? refreshReasonText() : state.sourceStatus) + '</span>';
         }
         if (refresh) {
           refresh.disabled = state.isRefreshing;
@@ -6726,15 +6773,44 @@
         syncMode();
       }
 
-      async function refreshLiveData() {
+      function startAutoRefresh() {
+        if (state.autoRefreshBound) return;
+        state.autoRefreshBound = true;
+        state.autoRefreshTimer = window.setInterval(function () {
+          if (shouldAutoRefresh(AUTO_REFRESH_MS)) {
+            refreshLiveData('auto');
+          }
+        }, AUTO_REFRESH_TICK_MS);
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden && shouldAutoRefresh(FOCUS_REFRESH_STALE_MS)) {
+            refreshLiveData('focus');
+          } else {
+            syncMode();
+          }
+        });
+        window.addEventListener('focus', function () {
+          if (shouldAutoRefresh(FOCUS_REFRESH_STALE_MS)) {
+            refreshLiveData('focus');
+          }
+        });
+      }
+
+      async function refreshLiveData(reason) {
         if (state.isRefreshing) return;
         state.isRefreshing = true;
+        state.refreshReason = reason || 'manual';
+        state.lastRefreshAttemptAt = Date.now();
         syncMode();
         try {
-          var raw = await loadSourceData();
-          applySourceData(raw);
+          var raw = await loadSourceData({ keepCurrentOnError: true });
+          if (raw) {
+            applySourceData(raw);
+          } else {
+            syncMode();
+          }
         } finally {
           state.isRefreshing = false;
+          state.refreshReason = '';
           syncMode();
         }
       }
@@ -6748,6 +6824,7 @@
           app.className = 'is-hydrated';
           app.innerHTML = buildShell();
           applySourceData(raw);
+          startAutoRefresh();
         } catch (error) {
           app.className = 'is-load-error';
           app.innerHTML = buildLoadErrorShell(error);
