@@ -110,6 +110,99 @@
       min-width: 0;
     }
 
+    .chrome-right {
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .chrome-center {
+      flex: 1;
+      justify-content: center;
+    }
+
+    .time-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .date-range-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(22, 24, 31, 0.05);
+      border: 1px solid rgba(22, 24, 31, 0.06);
+    }
+
+    .date-input-shell {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: inset 0 0 0 1px rgba(22, 24, 31, 0.04);
+    }
+
+    .date-input-shell span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .date-input-shell input {
+      appearance: none;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      width: 126px;
+      cursor: pointer;
+    }
+
+    .date-input-shell input:disabled {
+      cursor: progress;
+      opacity: 0.62;
+    }
+
+    .range-arrow {
+      color: rgba(22, 24, 31, 0.36);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .date-apply {
+      border: 0;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: #12131a;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+
+    .date-apply:hover {
+      transform: translateY(-1px);
+    }
+
+    .date-apply:disabled {
+      cursor: progress;
+      opacity: 0.62;
+      transform: none;
+    }
+
     .traffic {
       display: flex;
       gap: 6px;
@@ -138,6 +231,17 @@
       padding: 10px 16px;
       font-weight: 700;
       letter-spacing: 0.01em;
+    }
+
+    .pill.is-secondary {
+      background: rgba(22, 24, 31, 0.08);
+      color: var(--ink);
+    }
+
+    .pill:disabled,
+    .ghost-pill:disabled {
+      cursor: progress;
+      opacity: 0.64;
     }
 
     .ghost-pill {
@@ -204,6 +308,30 @@
       max-width: 68ch;
       line-height: 1.55;
     }
+
+    .source-status {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-align: right;
+      max-width: 360px;
+    }
+
+    .source-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted-soft);
+      flex: 0 0 auto;
+    }
+
+    .source-status.is-live .source-dot { background: var(--lime); }
+    .source-status.is-static .source-dot { background: var(--orange); }
+    .source-status.is-error .source-dot { background: var(--danger); }
 
     .chips {
       display: flex;
@@ -414,6 +542,15 @@
       border-radius: 18px;
       overflow: hidden;
       background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(22, 24, 31, 0.05);
+    }
+
+    .active-time-chart {
+      height: 360px;
+      border-radius: 18px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(248, 248, 249, 0.78));
       border: 1px solid rgba(22, 24, 31, 0.05);
     }
 
@@ -2665,6 +2802,10 @@
       .chart-shell {
         height: 440px;
       }
+
+      .active-time-chart {
+        height: 340px;
+      }
     }
 
     @media (max-width: 760px) {
@@ -2702,6 +2843,33 @@
         width: 100%;
       }
 
+      .chrome-right,
+      .chrome-center,
+      .time-controls,
+      .source-status {
+        width: 100%;
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .date-range-control {
+        width: 100%;
+        flex-wrap: wrap;
+        border-radius: 18px;
+      }
+
+      .date-input-shell {
+        flex: 1 1 150px;
+      }
+
+      .date-input-shell input {
+        width: 100%;
+      }
+
+      .date-apply {
+        flex: 1 1 100%;
+      }
+
       .mode-button {
         flex: 1;
       }
@@ -2716,6 +2884,10 @@
 
       .search-input {
         min-width: 100%;
+      }
+
+      .active-time-chart {
+        height: 320px;
       }
     }
   </style>
@@ -3257,6 +3429,10 @@
         current_17d: { content_creation_submit: 961 }
       };
 
+      var LIVE_MIN_DAY = '2026-08-01';
+      var LIVE_FALLBACK_TODAY = '2026-08-20';
+      var DAY_MS = 24 * 60 * 60 * 1000;
+
       var state = {
         mode: 'overview',
         windowKey: 'current_17d',
@@ -3264,9 +3440,16 @@
         rankingView: 'template',
         templateSort: 'value',
         templateQuery: '',
+        dateRange: null,
+        dateRangeAutoEnd: true,
         activeTemplateId: null,
         templateRankingScrollTop: 0,
         datasetMap: null,
+        staticSource: null,
+        sourceMode: 'static',
+        sourceStatus: '加载静态数据包',
+        sourceTrace: null,
+        isRefreshing: false,
         charts: {},
         resizeBound: false,
         tooltipBound: false,
@@ -3283,6 +3466,120 @@
 
       function pct(value, digits) {
         return num((value || 0) * 100, digits == null ? 1 : digits) + '%';
+      }
+
+      function firstMetric(item, fields) {
+        for (var i = 0; i < fields.length; i += 1) {
+          var value = item ? item[fields[i]] : null;
+          if (value != null && value !== '') return Number(value || 0);
+        }
+        return 0;
+      }
+
+      function replayEventCount(item) {
+        return firstMetric(item, ['replay_events', 'repeat_success_extra_events']);
+      }
+
+      function replayDenominatorCount(item) {
+        return firstMetric(item, ['replay_denominator', 'success_events_for_replay']);
+      }
+
+      function replayUserCount(item) {
+        return firstMetric(item, ['replay_users', 'repeat_success_users', 'repeat_try_now_users_7d']);
+      }
+
+      function replayEvidenceText(item) {
+        var denominator = replayDenominatorCount(item);
+        return denominator ? num(replayEventCount(item)) + ' / ' + num(denominator) : '无成功生成样本';
+      }
+
+      function parseDay(day) {
+        return new Date(day + 'T00:00:00Z');
+      }
+
+      function isoDay(date) {
+        return date.toISOString().slice(0, 10);
+      }
+
+      function addDays(day, count) {
+        return isoDay(new Date(parseDay(day).getTime() + count * DAY_MS));
+      }
+
+      function localTodayIso() {
+        var today = new Date();
+        if (Number.isNaN(today.getTime())) return LIVE_FALLBACK_TODAY;
+        var year = today.getFullYear();
+        var month = String(today.getMonth() + 1).padStart(2, '0');
+        var day = String(today.getDate()).padStart(2, '0');
+        return year + '-' + month + '-' + day;
+      }
+
+      function compareDays(a, b) {
+        return parseDay(a).getTime() - parseDay(b).getTime();
+      }
+
+      function getMaxSelectableDay() {
+        var today = localTodayIso();
+        if (compareDays(today, LIVE_MIN_DAY) < 0) return LIVE_FALLBACK_TODAY;
+        return today;
+      }
+
+      function clampDay(day, minDay, maxDay) {
+        var candidate = day && !Number.isNaN(parseDay(day).getTime()) ? day : minDay;
+        if (compareDays(candidate, minDay) < 0) return minDay;
+        if (compareDays(candidate, maxDay) > 0) return maxDay;
+        return candidate;
+      }
+
+      function ensureDateRange() {
+        var maxDay = getMaxSelectableDay();
+        if (!state.dateRange) {
+          state.dateRange = {
+            startDay: LIVE_MIN_DAY,
+            endDay: maxDay
+          };
+          state.dateRangeAutoEnd = true;
+        }
+        state.dateRange.startDay = clampDay(state.dateRange.startDay, LIVE_MIN_DAY, maxDay);
+        if (state.dateRangeAutoEnd) {
+          state.dateRange.endDay = maxDay;
+        } else {
+          state.dateRange.endDay = clampDay(state.dateRange.endDay, LIVE_MIN_DAY, maxDay);
+        }
+        if (compareDays(state.dateRange.startDay, state.dateRange.endDay) > 0) {
+          state.dateRange.startDay = state.dateRange.endDay;
+        }
+        return state.dateRange;
+      }
+
+      function setDateRange(startDay, endDay) {
+        var maxDay = getMaxSelectableDay();
+        var nextStart = clampDay(startDay, LIVE_MIN_DAY, maxDay);
+        var nextEnd = clampDay(endDay, LIVE_MIN_DAY, maxDay);
+        if (compareDays(nextStart, nextEnd) > 0) {
+          var swap = nextStart;
+          nextStart = nextEnd;
+          nextEnd = swap;
+        }
+        state.dateRange = {
+          startDay: nextStart,
+          endDay: nextEnd
+        };
+        state.dateRangeAutoEnd = nextEnd === maxDay;
+        return state.dateRange;
+      }
+
+      function getActiveTimeWindow() {
+        var range = ensureDateRange();
+        return {
+          id: range.startDay + '_' + range.endDay,
+          startDay: range.startDay,
+          endDay: range.endDay,
+          startIso: range.startDay + 'T00:00:00Z',
+          endIso: addDays(range.endDay, 1) + 'T00:00:00Z',
+          label: range.startDay + ' 至 ' + range.endDay,
+          pill: range.startDay + ' → ' + range.endDay
+        };
       }
 
       function ensureTooltipLayer() {
@@ -3342,6 +3639,13 @@
       function fmtDate(value) {
         if (!value) return '-';
         return String(value).slice(0, 10);
+      }
+
+      function fmtDateTime(value) {
+        if (!value) return '-';
+        var date = new Date(value);
+        if (Number.isNaN(date.getTime())) return String(value);
+        return date.toISOString().slice(0, 16).replace('T', ' ');
       }
 
       function safeText(value) {
@@ -3432,11 +3736,142 @@
         return moods[index % moods.length];
       }
 
-      function loadSourceData() {
+      function getStaticSourceData() {
         return Promise.resolve(globalThis.__TEMPLATE_METRICS_SOURCE__).then(function (data) {
           if (!data) throw new Error('charts-data missing');
+          state.staticSource = data;
           return data;
         });
+      }
+
+      function getPublishedTemplateRows(staticData, templateNames) {
+        var rows = (staticData.rows || staticData.TEMPLATE_OVERVIEW_ROWS || []).slice();
+        var seen = {};
+        rows.forEach(function (row) {
+          if (row && row.template_id) seen[row.template_id] = true;
+        });
+        (staticData.PUBLISHED_TEMPLATE_META || []).forEach(function (item) {
+          if (!item || !item.template_id || seen[item.template_id]) return;
+          seen[item.template_id] = true;
+          rows.push({
+            template_id: item.template_id,
+            template_name: templateNames[item.template_id] || item.title || item.template_id
+          });
+        });
+        return rows;
+      }
+
+      function buildMissingLiveTemplateRow(staticRow, templateNames) {
+        var zeroFields = [
+          'use_events', 'use_users', 'success_events', 'success_users', 'result_events',
+          'template_remix_events', 'template_remix_users', 'template_reremix',
+          'template_post_remix', 'template_post_remix_events', 'template_total_remix',
+          'successful_post_users', 'successful_post_count', 'successful_share_users',
+          'successful_share_count', 'share_result_events', 'valid_share_attempts',
+          'share_denominator', 'repeat_click_users', 'repeat_try_now_users_7d',
+          'repeat_success_users', 'repeat_success_extra_events', 'success_events_for_replay',
+          'replay_users', 'replay_events', 'replay_denominator', 'active_days', 'server_template_contents',
+          'server_template_published', 'server_template_users',
+          'server_template_published_users'
+        ];
+        var empty = {};
+        zeroFields.forEach(function (field) {
+          empty[field] = 0;
+        });
+        return Object.assign({}, staticRow, empty, {
+          template_name: templateNames[staticRow.template_id] || staticRow.template_name || staticRow.title || staticRow.template_id,
+          is_missing_live: true,
+          live_missing_reason: '当前时间窗无符合口径的模板成功生成事件'
+        });
+      }
+
+      function mergeLiveSource(staticData, liveData) {
+        var templateNames = staticData.TEMPLATE_NAMES || {};
+        var staticRows = getPublishedTemplateRows(staticData, templateNames);
+        var staticById = {};
+        var liveById = {};
+        staticRows.forEach(function (row) {
+          if (row && row.template_id) staticById[row.template_id] = row;
+        });
+        var liveRows = (liveData.rows || liveData.TEMPLATE_OVERVIEW_ROWS || []).filter(function (item) {
+          return item && item.template_id && staticById[item.template_id];
+        });
+        var mergedRows = liveRows.map(function (item) {
+          var staticRow = staticById[item.template_id] || {};
+          liveById[item.template_id] = true;
+          return Object.assign({}, staticRow, item, {
+            template_name: templateNames[item.template_id] || staticRow.template_name || item.template_name || item.template_id
+          });
+        });
+        var missingRows = staticRows.filter(function (row) {
+          return row && row.template_id && !liveById[row.template_id];
+        }).map(function (row) {
+          return buildMissingLiveTemplateRow(row, templateNames);
+        });
+        var allRows = mergedRows.concat(missingRows);
+        var publishTimelineRows = (liveData.TEMPLATE_PUBLISH_TIMELINE_ROWS || []).filter(function (item) {
+          return item && item.template_id && staticById[item.template_id];
+        }).map(function (item) {
+          var staticRow = staticById[item.template_id] || {};
+          return Object.assign({}, item, {
+            template_name: templateNames[item.template_id] || staticRow.template_name || item.template_name || item.template_id
+          });
+        });
+        var liveMix = (liveData.OVERVIEW_MIX_TOP50 || []).map(function (item) {
+          if (item.board !== 'template') return item;
+          var templateName = templateNames[item.template_id] || item.title || item.template_id;
+          return Object.assign({}, item, {
+            title: templateName,
+            template_name: templateName
+          });
+        });
+        return Object.assign({}, staticData, liveData, {
+          rows: allRows.length ? allRows : staticRows,
+          TEMPLATE_OVERVIEW_ROWS: allRows.length ? allRows : staticRows,
+          TEMPLATE_PUBLISH_TIMELINE_ROWS: publishTimelineRows,
+          POST_OVERVIEW_ROWS: liveData.POST_OVERVIEW_ROWS || staticData.POST_OVERVIEW_ROWS || [],
+          OVERVIEW_MIX_TOP50: liveMix.length ? liveMix : (staticData.OVERVIEW_MIX_TOP50 || []),
+          PUBLISHED_TEMPLATE_META: staticData.PUBLISHED_TEMPLATE_META || [],
+          TEMPLATE_NAMES: templateNames
+        });
+      }
+
+      async function fetchLiveSource() {
+        var activeWindow = getActiveTimeWindow();
+        var params = new URLSearchParams();
+        if (activeWindow) {
+          params.set('start', activeWindow.startIso);
+          params.set('end', activeWindow.endIso);
+        }
+        var endpoint = '/api/metrics' + (params.toString() ? '?' + params.toString() : '');
+        var response = await fetch(endpoint, { cache: 'no-store' });
+        var payload = await response.json().catch(function () { return {}; });
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || ('PostHog API 返回 ' + response.status));
+        }
+        return payload.data;
+      }
+
+      async function loadSourceData(options) {
+        var staticData = await getStaticSourceData();
+        if (options && options.skipLive) {
+          state.sourceMode = 'static';
+          state.sourceStatus = '静态数据包';
+          state.sourceTrace = null;
+          return staticData;
+        }
+        try {
+          var liveData = await fetchLiveSource();
+          state.sourceMode = 'live';
+          state.sourceStatus = 'PostHog live · 业务看板口径 · ' + fmtDateTime(liveData.generated_at);
+          state.sourceTrace = liveData.API_TRACE || null;
+          return mergeLiveSource(staticData, liveData);
+        } catch (error) {
+          state.sourceMode = 'error';
+          state.sourceStatus = '静态包兜底 · ' + (error && error.message ? error.message : error);
+          state.sourceTrace = null;
+          return staticData;
+        }
       }
 
       function buildWindowSources(baseRaw) {
@@ -3453,7 +3888,15 @@
             template_name: templateName,
             template_remix_users: item.use_users,
             template_remix_events: item.use_events,
-            replay_users: item.repeat_click_users
+            legacy_repeat_click_users: item.repeat_click_users,
+            legacy_replay_rate_7d: item.replay_rate_7d,
+            repeat_success_users: 0,
+            repeat_success_extra_events: 0,
+            success_events_for_replay: 0,
+            replay_users: 0,
+            replay_events: 0,
+            replay_denominator: 0,
+            replay_rate_7d: 0
           });
         });
         var previousHeatmap = parseDelimitedRows(PREVIOUS_17_HEATMAP_CSV, ['remix_count']);
@@ -3488,7 +3931,7 @@
             board: 'template',
             board_label: '模板',
             title: item.template_name,
-            subtitle: shortId(item.template_id) + ' · 复玩率 ' + pct(item.replay_rate_7d),
+            subtitle: shortId(item.template_id) + ' · 成功复玩需实时窗口',
             url: templateDetailUrl(item.template_id),
             total_value: (item.success_users || 0) + (item.template_post_remix_events || 0),
             template_success_users: item.success_users || 0,
@@ -3520,11 +3963,14 @@
           RETENTION_STATS: WINDOW_RETENTION_STATS.previous_17d,
           windowLabel: '2026-07-14 至 2026-07-31'
         };
+        var activeWindow = getActiveTimeWindow();
+        var currentWindowLabel = baseRaw.windowLabel
+          || (baseRaw.source === 'posthog-api' && activeWindow ? activeWindow.label : '2026-08-01 至 2026-08-17');
         var currentRaw = Object.assign({}, baseRaw, {
-          ACTIVITY_HEATMAP_ROWS: ACTIVITY_HEATMAP_ROWS,
-          CONVERSION_STATS: WINDOW_CONVERSION_STATS.current_17d,
+          ACTIVITY_HEATMAP_ROWS: baseRaw.ACTIVITY_HEATMAP_ROWS || ACTIVITY_HEATMAP_ROWS,
+          CONVERSION_STATS: baseRaw.CONVERSION_STATS || WINDOW_CONVERSION_STATS.current_17d,
           RETENTION_STATS: WINDOW_RETENTION_STATS.current_17d,
-          windowLabel: '2026-08-01 至 2026-08-17'
+          windowLabel: currentWindowLabel
         });
         return {
           current_17d: currentRaw,
@@ -3546,16 +3992,32 @@
           var templateRemixUsers = Number(item.template_remix_users || item.use_users || 0);
           var templateRemixEvents = Number(item.template_remix_events || item.use_events || 0);
           var templateReremix = Number(item.template_reremix || item.template_post_remix || item.template_post_remix_events || 0);
-          var repeatTryNowUsers7d = Number(item.repeat_try_now_users_7d || item.repeat_click_users || item.replay_users || 0);
-          var repeatTryNowRate7d = templateRemixUsers ? repeatTryNowUsers7d / templateRemixUsers : 0;
-          var repeatTryNowUsersPerDay = item.active_days ? repeatTryNowUsers7d / item.active_days : 0;
           var successUsers = Number(item.success_users || 0);
-          var successfulPostUsers = Number(item.successful_post_users || 0);
+          var successEvents = Number(item.success_events || 0);
+          var hasSuccessReplayUsers = item.repeat_success_users != null && item.repeat_success_users !== '';
+          var replayUsers = hasSuccessReplayUsers
+            ? Number(item.repeat_success_users || 0)
+            : Number(item.replay_users || item.repeat_try_now_users_7d || 0);
+          var hasSuccessReplayEvents = item.repeat_success_extra_events != null && item.repeat_success_extra_events !== '';
+          var replayEvents = hasSuccessReplayEvents
+            ? Number(item.repeat_success_extra_events || 0)
+            : Number(item.replay_events || 0);
+          var hasReplayDenominator = item.success_events_for_replay != null && item.success_events_for_replay !== '';
+          var replayDenominator = Number(item.success_events_for_replay || 0);
+          if (!replayDenominator) replayDenominator = Number(item.replay_denominator || 0);
+          if (!replayDenominator && !hasReplayDenominator && item.replay_denominator == null) replayDenominator = successEvents;
+          var repeatTryNowUsers7d = replayUsers;
+          var repeatTryNowRate7d = replayDenominator ? replayEvents / replayDenominator : 0;
+          var repeatTryNowUsersPerDay = item.active_days ? repeatTryNowUsers7d / item.active_days : 0;
+          var serverTemplateContents = Number(item.server_template_contents || 0);
+          var serverTemplatePublished = Number(item.server_template_published || 0);
+          var serverTemplatePublishedUsers = Number(item.server_template_published_users || 0);
+          var successfulPostUsers = serverTemplateContents ? serverTemplatePublished : Number(item.successful_post_users || 0);
           var successfulShareUsers = Number(item.successful_share_users || 0);
           var usageUsers = successUsers;
           var publishUsers = successfulPostUsers;
           var shareUsers = successfulShareUsers;
-          var postAfterSuccessRate = usageUsers ? publishUsers / usageUsers : Number(item.post_rate_1d || 0);
+          var postAfterSuccessRate = serverTemplateContents ? serverTemplatePublished / serverTemplateContents : (usageUsers ? publishUsers / usageUsers : Number(item.post_rate_1d || 0));
           var shareAfterPostRate = publishUsers ? shareUsers / publishUsers : 0;
           var valueOutput = usageUsers + publishUsers * 2 + shareUsers * 2;
           var sampleLabel = usageUsers >= 20 ? '可比较' : (usageUsers >= 5 ? '观察中' : '数据不足');
@@ -3571,6 +4033,13 @@
             usage_users: usageUsers,
             publish_users: publishUsers,
             share_users: shareUsers,
+            server_template_contents: serverTemplateContents,
+            server_template_published: serverTemplatePublished,
+            server_template_published_users: serverTemplatePublishedUsers,
+            server_template_publish_rate: serverTemplateContents ? serverTemplatePublished / serverTemplateContents : 0,
+            repeat_success_users: replayUsers,
+            repeat_success_extra_events: replayEvents,
+            success_events_for_replay: replayDenominator,
             repeat_try_now_users_7d: repeatTryNowUsers7d,
             repeat_try_now_rate_7d: repeatTryNowRate7d,
             repeat_try_now_users_per_day: repeatTryNowUsersPerDay,
@@ -3581,6 +4050,8 @@
             value_output: valueOutput,
             sample_label: sampleLabel,
             replay_users: repeatTryNowUsers7d,
+            replay_events: replayEvents,
+            replay_denominator: replayDenominator,
             replay_rate_7d: repeatTryNowRate7d,
             replay_users_per_day: repeatTryNowUsersPerDay,
             successGap: (item.success_users || 0) - (item.template_remix_users || 0)
@@ -3615,8 +4086,13 @@
         var rising = rows.slice().sort(function (a, b) {
           return (b.template_remix_events_per_day - a.template_remix_events_per_day) || (b.success_users - a.success_users);
         });
-        var replay = rows.slice().sort(function (a, b) {
-          return (b.replay_rate_7d - a.replay_rate_7d) || (b.success_users - a.success_users);
+        var replay = rows.filter(function (item) {
+          return replayDenominatorCount(item) > 0 && replayEventCount(item) > 0;
+        }).slice().sort(function (a, b) {
+          return (b.replay_rate_7d - a.replay_rate_7d)
+            || (replayEventCount(b) - replayEventCount(a))
+            || (replayDenominatorCount(b) - replayDenominatorCount(a))
+            || (b.success_users - a.success_users);
         });
         var overviewMix = (raw.OVERVIEW_MIX_TOP50 || []).map(function (item, index) {
           var base = {
@@ -3736,7 +4212,21 @@
         };
       }
 
+      function renderDateRangeControl() {
+        var activeWindow = getActiveTimeWindow();
+        var maxDay = getMaxSelectableDay();
+        return [
+          '<div class="date-range-control" id="date-range-control">',
+            '<label class="date-input-shell"><span>起</span><input type="date" id="date-range-start" min="' + safeText(LIVE_MIN_DAY) + '" max="' + safeText(maxDay) + '" value="' + safeText(activeWindow.startDay) + '"' + (state.isRefreshing ? ' disabled' : '') + '></label>',
+            '<span class="range-arrow">→</span>',
+            '<label class="date-input-shell"><span>止</span><input type="date" id="date-range-end" min="' + safeText(LIVE_MIN_DAY) + '" max="' + safeText(maxDay) + '" value="' + safeText(activeWindow.endDay) + '"' + (state.isRefreshing ? ' disabled' : '') + '></label>',
+            '<button class="date-apply" type="button" id="apply-date-range"' + (state.isRefreshing ? ' disabled' : '') + '>应用</button>',
+          '</div>'
+        ].join('');
+      }
+
       function buildShell() {
+        var activeWindow = getActiveTimeWindow();
         return [
           '<div class="shell">',
             '<div class="board">',
@@ -3750,9 +4240,12 @@
                   '</div>',
                 '</div>',
                 '<div class="chrome-center">',
-                  '<button class="ghost-pill" type="button" id="window-pill">2026-08-01 → 2026-08-17</button>',
+                  '<div class="time-controls" id="time-controls">',
+                    renderDateRangeControl(),
+                  '</div>',
                 '</div>',
                 '<div class="chrome-right">',
+                  '<button class="pill is-secondary" type="button" id="refresh-live-data">刷新数据</button>',
                   '<button class="pill" type="button" id="jump-current-link">打开源链接</button>',
                 '</div>',
               '</div>',
@@ -3761,8 +4254,9 @@
                   '<div>',
                     '<h1 class="headline" id="status-headline">模板总览</h1>',
                   '</div>',
-                  '<div class="subcopy" id="status-subcopy">2026-08-01 至 2026-08-17</div>',
+                '<div class="subcopy" id="status-subcopy">' + safeText(activeWindow ? activeWindow.label : '2026-08-01 至 2026-08-17') + '</div>',
                 '</div>',
+                '<div class="source-status is-static" id="source-status"><span class="source-dot"></span><span>静态数据包</span></div>',
               '</div>',
               '<section id="panel-overview" class="panel overview-grid is-active"></section>',
               '<section id="panel-template" class="panel"></section>',
@@ -3777,7 +4271,9 @@
 
       function getBusinessOverviewSnapshot(dataset) {
         var totals = dataset.totals || {};
-        var conversionStats = dataset.conversionStats || {};
+        var raw = dataset.raw || {};
+        var contentStats = raw.CONTENT_PUBLISH_STATS || {};
+        var diagnostics = raw.LIVE_CONVERSION_DIAGNOSTICS || {};
         var retentionStats = dataset.retentionStats || {};
         var topRemix = dataset.topRemix[0];
         var topReplay = dataset.replay[0];
@@ -3785,12 +4281,22 @@
         var templateTotal = Number(totals.template_total || 0);
         var postTotal = Number(totals.post_total || 0);
         var totalCreation = templateTotal + postTotal;
-        var templateShareOfCreation = totalCreation ? templateTotal / totalCreation : 0;
+        var serviceContentTotal = Number(contentStats.total_contents || totalCreation || 0);
+        var servicePublishedTotal = Number(contentStats.published_contents || 0);
+        var servicePublishRate = serviceContentTotal ? servicePublishedTotal / serviceContentTotal : 0;
+        var serviceTemplateTotal = Number(contentStats.template_contents || templateTotal || 0);
+        var serviceTemplatePublished = Number(contentStats.template_published || 0);
+        var serviceTemplateRate = serviceTemplateTotal ? serviceTemplatePublished / serviceTemplateTotal : 0;
+        var templateShareDenominator = serviceContentTotal || totalCreation;
+        var templateShareOfCreation = templateShareDenominator ? serviceTemplateTotal / templateShareDenominator : 0;
+        var remixTotal = Number(contentStats.remix_contents || 0);
+        var remixPublished = Number(contentStats.remix_published || 0);
+        var remixRate = remixTotal ? remixPublished / remixTotal : 0;
         var templateUsageTotal = dataset.rows.reduce(function (sum, item) {
           return sum + Number(item.template_remix_events || 0);
         }, 0);
-        var siteWindowTotals = WINDOW_SITE_TOTALS[state.windowKey] || {};
-        var siteCreationSubmitTotal = Number(siteWindowTotals.content_creation_submit || 0);
+        var siteWindowTotals = (dataset.raw && dataset.raw.SITE_TOTALS) || WINDOW_SITE_TOTALS[state.windowKey] || {};
+        var siteCreationSubmitTotal = Number(siteWindowTotals.content_creation_submit || serviceContentTotal || 0);
         var usageDenominator = siteCreationSubmitTotal || totalCreation;
         var totalUseUsers = dataset.rows.reduce(function (sum, item) {
           return sum + Number(item.template_remix_users || 0);
@@ -3798,18 +4304,19 @@
         var totalSuccessUsers = dataset.rows.reduce(function (sum, item) {
           return sum + Number(item.success_users || 0);
         }, 0);
-        var totalSuccessRate = totalUseUsers ? totalSuccessUsers / totalUseUsers : 0;
+        var tryNowSuccessEvents = Number(diagnostics.client_template_success_events || 0);
+        var tryNowResultEvents = Number(diagnostics.client_template_result_events || 0);
+        var totalSuccessRate = tryNowResultEvents ? tryNowSuccessEvents / tryNowResultEvents : (totalUseUsers ? totalSuccessUsers / totalUseUsers : 0);
         return {
           topRemix: topRemix,
           topReplay: topReplay,
           topShare: topShare,
           metrics: [
-            { label: '模板带来的创作总量', value: num(templateTotal), note: '当前窗口模板侧累计', delta: '', tone: 'lime' },
-            { label: '模板创作占比', value: pct(templateShareOfCreation), note: '模板量 / 总创作量', delta: num(templateTotal) + ' / ' + num(totalCreation), tone: 'orange' },
-            { label: '模板总使用量', value: num(templateUsageTotal), note: siteCreationSubmitTotal ? '模板使用量 / 全站创作提交量' : '模板使用量 / 总创作量', delta: usageDenominator ? (num(templateUsageTotal) + ' / ' + num(usageDenominator)) : safeText(topRemix ? topRemix.template_name : '-') + ' 点击最高', tone: 'ink' },
-            { label: '成功生成后发帖率', value: pct((conversionStats.post_rate_pct || 0) / 100), note: '成功生成用户里继续发帖', delta: num(conversionStats.successful_post_users || 0) + ' / ' + num(conversionStats.success_users || 0), tone: 'blue', featured: true },
-            { label: '成功分享率', value: pct((conversionStats.share_rate_pct || 0) / 100), note: '成功生成用户里完成有效主动分享', delta: num(conversionStats.successful_share_users || 0) + ' / ' + num(conversionStats.success_users || 0), tone: 'orange', featured: true },
-            { label: '总成功率', value: pct(totalSuccessRate), note: '模板使用用户里成功生成的占比', delta: num(totalSuccessUsers) + ' / ' + num(totalUseUsers), tone: 'ink' }
+            { label: '模板占比', value: pct(templateShareOfCreation), note: 'content_template / 全部 game_tasks', delta: num(serviceTemplateTotal) + ' / ' + num(templateShareDenominator), tone: 'lime', featured: true },
+            { label: '内容发布率', value: pct(servicePublishRate), note: 'is_draft=false / 非删除内容', delta: num(servicePublishedTotal) + ' / ' + num(serviceContentTotal), tone: 'blue' },
+            { label: '模板发布率', value: pct(serviceTemplateRate), note: '服务端模板来源内容发布', delta: num(serviceTemplatePublished) + ' / ' + num(serviceTemplateTotal), tone: 'blue', featured: true },
+            { label: 'Remix 发布率', value: pct(remixRate), note: 'source=user_remix_app', delta: num(remixPublished) + ' / ' + num(remixTotal), tone: 'ink' },
+            { label: 'Try Now 成功率', value: pct(totalSuccessRate), note: '客户端 App release，事件口径', delta: num(tryNowSuccessEvents || totalSuccessUsers) + ' / ' + num(tryNowResultEvents || totalUseUsers), tone: 'ink' }
           ]
         };
       }
@@ -3852,7 +4359,7 @@
       function renderOverview(dataset) {
         var panel = document.getElementById('panel-overview');
         if (!panel) return;
-        var allowOverallRanking = state.windowKey !== 'previous_17d';
+        state.rankingView = 'template';
         var templatePanel = document.getElementById('panel-template');
         if (templatePanel) templatePanel.className = 'panel';
         var snapshot = getBusinessOverviewSnapshot(dataset);
@@ -3884,6 +4391,15 @@
                 '</div>',
                 '<div class="cadence-panel">' + renderActivityCadence(dataset) + '</div>',
               '</div>',
+              '<div class="card">',
+                '<div class="card-head">',
+                  '<div>',
+                    '<h2>用户在线时长</h2>',
+                  '</div>',
+                  '<div class="ghost-pill">' + num(((dataset.raw || {}).TEMPLATE_PUBLISH_TIMELINE_ROWS || []).length) + ' 发布点</div>',
+                '</div>',
+                '<div id="chart-active-time" class="active-time-chart"></div>',
+              '</div>',
               '<div class="overview-left-signals">',
                 '<div class="card signal-card">',
                   '<div class="card-head">',
@@ -3897,7 +4413,7 @@
                 '<div class="card signal-card">',
                   '<div class="card-head">',
                     '<div>',
-                      '<h3>高复玩模板</h3>',
+                      '<h3>成功复玩模板</h3>',
                     '</div>',
                     '<div class="ghost-pill">Top 6</div>',
                   '</div>',
@@ -3911,11 +4427,7 @@
                   '<div>',
                     '<h2>分榜排名</h2>',
                   '</div>',
-                  '<div class="ranking-switch">',
-                    '<button type="button" data-ranking-view="template"' + (state.rankingView === 'template' ? ' class="is-active"' : '') + '>模板</button>',
-                    '<button type="button" data-ranking-view="user"' + (state.rankingView === 'user' ? ' class="is-active"' : '') + '>用户</button>',
-                    (allowOverallRanking ? ('<button type="button" data-ranking-view="overall"' + (state.rankingView === 'overall' ? ' class="is-active"' : '') + '>总排名</button>') : ''),
-                  '</div>',
+                  '<div class="ghost-pill">模板榜</div>',
                 '</div>',
                 '<div class="ranking-scroll-shell">' + renderBusinessOverviewRankingPanel(dataset) + '</div>',
                 '<div class="rank-summary">' + renderBusinessRankingSummary(dataset, topRemix, topReplay, topShare) + '</div>',
@@ -4039,6 +4551,7 @@
           return;
         }
         renderOverview(dataset);
+        renderActiveTimeChart(dataset);
       }
 
       function buildMiniInsight(label, title, note) {
@@ -4104,7 +4617,7 @@
         }
         return [
           buildPlainInsight('传播价值最高', topRemix ? topRemix.template_name : '-', topRemix ? num(topRemix.value_output || 0) : '-', '综合传播值'),
-          buildPlainInsight('发帖承接最好', topReplay ? topReplay.template_name : '-', topReplay ? pct(topReplay.publish_rate || 0) : '-', topReplay ? num(topReplay.publish_users || 0) + ' / ' + num(topReplay.usage_users || 0) : '-'),
+          buildPlainInsight('服务端发布最好', topReplay ? topReplay.template_name : '-', topReplay ? pct(topReplay.publish_rate || 0) : '-', topReplay ? num(topReplay.server_template_published || topReplay.publish_users || 0) + ' / ' + num(topReplay.server_template_contents || topReplay.usage_users || 0) : '-'),
           buildPlainInsight('分享承接最好', topRising ? topRising.template_name : '-', topRising ? pct(topRising.share_after_post_rate || 0) : '-', topRising ? num(topRising.share_users || 0) + ' / ' + num(topRising.publish_users || 0) : '-')
         ].join('');
       }
@@ -4134,7 +4647,7 @@
         }
         return [
           buildLabelInsight('点击最高模板', topRemix ? (topRemix.template_name || '-') : '-', topRemix ? '当前窗口总 remix ' + num(topRemix.template_remix_events || 0) : '-', topRemix ? '当前窗口总 remix ' + num(topRemix.template_remix_events || 0) : ''),
-          buildLabelInsight('复玩率最高模板', topReplay ? (topReplay.template_name || '-') : '-', topReplay ? '复玩率 ' + pct(topReplay.replay_rate_7d || 0, 0) : '-', topReplay ? '复玩率 ' + pct(topReplay.replay_rate_7d || 0, 0) + '\n复玩用户 ' + num(topReplay.replay_users || 0) + ' / ' + num(topReplay.template_remix_users || 0) : ''),
+          buildLabelInsight('成功复玩最高模板', topReplay ? (topReplay.template_name || '-') : '-', topReplay ? '成功复玩 ' + pct(topReplay.replay_rate_7d || 0, 0) : '-', topReplay ? '成功复玩 ' + pct(topReplay.replay_rate_7d || 0, 0) + '\n第2次及以后成功生成 ' + replayEvidenceText(topReplay) + '\n复玩用户 ' + num(replayUserCount(topReplay)) : ''),
           buildLabelInsight('分享承接最高模板', topShare ? (topShare.template_name || '-') : '-', topShare ? '分享承接 ' + pct(topShare.success_share_rate || 0, 0) : '-', topShare ? '分享承接 ' + pct(topShare.success_share_rate || 0, 0) + '\n分享用户 ' + num(topShare.share_users || 0) + ' / ' + num(topShare.success_users || 0) : '')
         ].join('');
       }
@@ -4514,22 +5027,22 @@
             tone: 'lime'
           },
           {
-            label: '高复玩模板',
-            count: dataset.rows.filter(function (item) { return Number(item.replay_rate_7d || 0) >= 0.3; }).length,
-            note: '重复点击更强',
+            label: '高成功复玩',
+            count: dataset.rows.filter(function (item) { return replayDenominatorCount(item) > 0 && Number(item.replay_rate_7d || 0) >= 0.3; }).length,
+            note: '第2次+成功生成 / 成功生成',
             tone: 'blue'
           },
           {
-            label: '高发帖承接',
+            label: '高发布承接',
             count: dataset.rows.filter(function (item) { return Number(item.post_after_success_rate || 0) >= 0.25 && Number(item.success_users || 0) >= 5; }).length,
-            note: '成功生成后更容易继续发帖',
+            note: '服务端模板内容发布率更高',
             tone: 'orange'
           },
           {
             label: '沉淀模板',
             count: dataset.rows.filter(function (item) {
               return !(Number(item.active_days || 0) <= 7 && Number(item.template_remix_events_per_day || 0) >= 6)
-                && !(Number(item.replay_rate_7d || 0) >= 0.3)
+                && !(replayDenominatorCount(item) > 0 && Number(item.replay_rate_7d || 0) >= 0.3)
                 && !(Number(item.post_after_success_rate || 0) >= 0.25 && Number(item.success_users || 0) >= 5);
             }).length,
             note: '其余模板',
@@ -4571,7 +5084,7 @@
         var topShare = dataset.topShare[0];
         var items = [
           topUsage ? signalListItem('用得最多', topUsage.template_name, num(topUsage.usage_users || 0), '使用人数', '当前使用人数最高 · ' + safeText(topUsage.sample_label || '观察中'), templateUrl(topUsage.template_id), '', '') : '',
-          topPublish ? signalListItem('最愿意发', topPublish.template_name, pct(topPublish.publish_rate || 0), '发帖率', '发帖承接最好 · ' + num(topPublish.publish_users || 0) + ' / ' + num(topPublish.usage_users || 0), templateUrl(topPublish.template_id), '', '') : '',
+          topPublish ? signalListItem('发布最好', topPublish.template_name, pct(topPublish.publish_rate || 0), '发布率', '服务端发布承接最好 · ' + num(topPublish.server_template_published || topPublish.publish_users || 0) + ' / ' + num(topPublish.server_template_contents || topPublish.usage_users || 0), templateUrl(topPublish.template_id), '', '') : '',
           topShare ? signalListItem('最愿意分享', topShare.template_name, pct(topShare.share_after_post_rate || 0), '分享率', '分享承接最好 · ' + num(topShare.share_users || 0) + ' / ' + num(topShare.publish_users || 0), templateUrl(topShare.template_id), '', '') : ''
         ].filter(Boolean);
         return '<div class="leaderboard-list replay-list">' + items.join('') + '</div>';
@@ -4580,7 +5093,7 @@
       function renderBusinessReplayPanel(dataset) {
         var replayList = dataset.replay.slice(0, 6);
         if (!replayList.length) {
-          return '<div class="planning-note">该时间窗下暂无可用的复玩数据。</div>';
+          return '<div class="planning-note">该时间窗下暂无可用的成功复玩数据。</div>';
         }
         var maxReplayRate = replayList.reduce(function (max, item) {
           return Math.max(max, Number(item.replay_rate_7d || 0));
@@ -4590,7 +5103,7 @@
             var rate = Number(item.replay_rate_7d || 0);
             var height = Math.max(28, rate / maxReplayRate * 164);
             var displayRate = pct(rate, 0);
-            var tooltip = safeText((item.template_name || '-') + '\n复玩率 ' + displayRate + '\n复玩用户 ' + num(item.replay_users || 0) + ' / ' + num(item.template_remix_users || 0) + '\nremix ' + num(item.template_remix_events || 0));
+            var tooltip = safeText((item.template_name || '-') + '\n成功复玩率 ' + displayRate + '\n第2次及以后成功生成 ' + replayEvidenceText(item) + '\n复玩用户 ' + num(replayUserCount(item)));
             return [
               '<a class="replay-column' + (index === 0 ? ' is-hot' : '') + '" href="' + safeText(templateUrl(item.template_id)) + '" target="_blank" rel="noopener" data-tooltip="' + tooltip + '">',
                 '<div class="replay-bar" style="height:' + height.toFixed(1) + 'px"></div>',
@@ -4619,7 +5132,7 @@
               '<div class="feature-stats">',
                 '<span class="stat-chip">成功 ' + num(item.success_users) + '</span>',
                 '<span class="stat-chip">remix ' + num(item.template_remix_events) + '</span>',
-                '<span class="stat-chip">复玩率 ' + pct(item.repeat_try_now_rate_7d || item.replay_rate_7d) + '</span>',
+                '<span class="stat-chip">成功复玩 ' + pct(item.repeat_try_now_rate_7d || item.replay_rate_7d) + '</span>',
               '</div>',
             '</div>',
           '</article>'
@@ -4647,7 +5160,12 @@
       }
 
       function getWindowLabel(windowKey) {
-        return windowKey === 'previous_17d' ? '2026-07-14 至 2026-07-31' : '2026-08-01 至 2026-08-17';
+        if (windowKey === 'previous_17d') return '2026-07-14 至 2026-07-31';
+        var datasetMap = state.datasetMap || {};
+        var source = datasetMap.current_17d;
+        if (source && source.windowLabel) return source.windowLabel;
+        var activeWindow = getActiveTimeWindow();
+        return activeWindow ? activeWindow.label : '2026-08-01 至 2026-08-17';
       }
 
       function getActiveTemplate(dataset) {
@@ -4681,6 +5199,22 @@
             item: item
           };
         });
+      }
+
+      function getCurrentWindowReplayMetrics(templateId) {
+        var datasetMap = state.datasetMap || {};
+        var source = datasetMap.current_17d;
+        var item = source && source.rows ? source.rows.find(function (row) {
+          return row.template_id === templateId;
+        }) : null;
+        var events = replayEventCount(item);
+        var denominator = replayDenominatorCount(item);
+        return {
+          users: replayUserCount(item),
+          events: events,
+          denominator: denominator,
+          rate: denominator ? events / denominator : 0
+        };
       }
 
       function getTemplateLifetimeSummaryMap() {
@@ -4794,24 +5328,34 @@
           if (!item) return acc;
           acc.template_remix_events += Number(item.template_remix_events || 0);
           acc.template_remix_users += Number(item.template_remix_users || 0);
+          acc.success_events += Number(item.success_events || 0);
           acc.success_users += Number(item.success_users || 0);
           acc.successful_post_users += Number(item.successful_post_users || 0);
           acc.successful_share_users += Number(item.successful_share_users || 0);
-          acc.repeat_try_now_users_7d += Number(item.repeat_try_now_users_7d || 0);
+          acc.repeat_success_users += replayUserCount(item);
+          acc.repeat_success_extra_events += replayEventCount(item);
+          acc.success_events_for_replay += replayDenominatorCount(item);
           acc.tracked_days += Number(item.active_days || 0);
           return acc;
         }, {
           template_remix_events: 0,
           template_remix_users: 0,
+          success_events: 0,
           success_users: 0,
           successful_post_users: 0,
           successful_share_users: 0,
-          repeat_try_now_users_7d: 0,
+          repeat_success_users: 0,
+          repeat_success_extra_events: 0,
+          success_events_for_replay: 0,
           tracked_days: 0
         });
         totals.post_after_success_rate = totals.success_users ? totals.successful_post_users / totals.success_users : 0;
         totals.success_share_rate = totals.success_users ? totals.successful_share_users / totals.success_users : 0;
-        totals.replay_rate_7d = totals.template_remix_users ? totals.repeat_try_now_users_7d / totals.template_remix_users : 0;
+        totals.repeat_try_now_users_7d = totals.repeat_success_users;
+        totals.replay_users = totals.repeat_success_users;
+        totals.replay_events = totals.repeat_success_extra_events;
+        totals.replay_denominator = totals.success_events_for_replay;
+        totals.replay_rate_7d = totals.replay_denominator ? totals.replay_events / totals.replay_denominator : 0;
         totals.template_remix_events_per_day = totals.tracked_days ? totals.template_remix_events / totals.tracked_days : 0;
         return {
           timeline: timeline,
@@ -4828,18 +5372,28 @@
         var dailyRows = getTemplateLifetimeDailyMap()[templateId] || [];
         var launchDay = fmtDate(summary.launch_at);
         var timeline = buildDailyTimeline(launchDay, '2026-08-18', dailyRows);
+        var currentReplay = getCurrentWindowReplayMetrics(templateId);
+        var successEvents = Number(scratchpadSummary ? scratchpadSummary.success_count : (summary.success_events || 0));
         var totals = {
           template_remix_events: Number(scratchpadSummary ? scratchpadSummary.usage_count : (summary.use_events || 0)),
           template_remix_users: Number(scratchpadSummary ? scratchpadSummary.user_count : (summary.use_users || 0)),
-          success_events: Number(scratchpadSummary ? scratchpadSummary.success_count : (summary.success_events || 0)),
+          success_events: successEvents,
           success_users: Number(summary.success_users || 0),
           failure_events: Number(scratchpadSummary ? scratchpadSummary.failure_count : 0),
           successful_post_count: Number(summary.successful_post_count || 0),
           successful_post_users: Number(summary.successful_post_users || 0),
           successful_share_count: Number(summary.successful_share_count || 0),
           successful_share_users: Number(summary.successful_share_users || 0),
-          repeat_try_now_users_7d: Number(summary.replay_users || 0),
-          replay_rate_7d: Number(summary.replay_rate_7d || 0),
+          repeat_success_users: currentReplay.users,
+          repeat_success_extra_events: currentReplay.events,
+          success_events_for_replay: currentReplay.denominator,
+          repeat_try_now_users_7d: currentReplay.users,
+          replay_users: currentReplay.users,
+          replay_events: currentReplay.events,
+          replay_denominator: currentReplay.denominator,
+          replay_rate_7d: currentReplay.rate,
+          legacy_repeat_click_users: Number(summary.replay_users || 0),
+          legacy_replay_rate_7d: Number(summary.replay_rate_7d || 0),
           post_after_success_rate: Number(scratchpadSummary ? scratchpadSummary.publish_conversion_rate : (summary.post_after_success_rate || 0)),
           publish_conversion_rate: Number(scratchpadSummary ? scratchpadSummary.publish_conversion_rate : (summary.post_after_success_rate || 0)),
           success_rate: Number(scratchpadSummary ? scratchpadSummary.success_rate : 0),
@@ -4936,11 +5490,11 @@
             '</div>',
             '<div class="hero-meta">',
               '<div class="hero-kpis">',
-                heroKpi('使用用户 U', num(item.usage_users || item.success_users || 0), '生命周期成功生成用户'),
-                heroKpi('发布率 P/U', pct(item.publish_rate || item.post_after_success_rate || 0), '累计发布承接'),
-                heroKpi('分享用户 S', num(item.share_users || item.successful_share_users || 0), '有效主动分享用户'),
-                heroKpi('分享率 S/P', pct(item.share_after_post_rate || 0), '发布后分享率'),
-                heroKpi('价值产出', num(item.value_output || 0), 'U + 2P + 2S'),
+                heroKpi('Try Now 成功用户', num(item.usage_users || item.success_users || 0), '客户端 App release，usr_id 去重'),
+                heroKpi('服务端发布率', pct(item.server_template_publish_rate || item.publish_rate || item.post_after_success_rate || 0), 'published / template contents'),
+                heroKpi('分享用户', num(item.share_users || item.successful_share_users || 0), 'share_result 成功用户'),
+                heroKpi('分享成功率', pct(item.success_share_rate || 0), '新版 valid attempts，老版回退 result'),
+                heroKpi('服务端内容数', num(item.server_template_contents || 0), 'content_template 可归因'),
                 heroKpi('上线周期', num(item.tracked_days || 0) + ' 天', safeText(fmtDate(item.launch_at) + ' → 2026-08-18')),
               '</div>',
             '</div>',
@@ -4972,19 +5526,19 @@
             note: '后台累计'
           },
           {
-            label: '发帖率',
+            label: '服务端发布率',
             value: pct(totals.post_after_success_rate || 0),
-            note: '后台发布转化率'
+            note: '后台内容发布口径'
           },
           {
             label: '分享率',
             value: pct(totals.success_share_rate || 0),
-            note: 'PostHog 成功后分享'
+            note: 'PostHog share_result'
           },
           {
-            label: '复玩率',
+            label: '当前窗口成功复玩率',
             value: pct(totals.replay_rate_7d || 0),
-            note: num(totals.repeat_try_now_users_7d || 0) + ' / ' + num(totals.template_remix_users || 0)
+            note: '第2次+成功生成 ' + replayEvidenceText(totals)
           },
           {
             label: '已接入天数',
@@ -5055,7 +5609,7 @@
             valueLabel = '成功率';
             valueText = formatSampleRate(lifetimeSuccessRateValue, lifetimeTotals.success_events || 0, lifetimeTotals.template_remix_events || 0);
           } else {
-            summary = '累计价值 ' + num(lifetimeTotals.value_output || 0) + ' · 发帖率 ' + pct(lifetimeTotals.publish_rate || lifetimeTotals.post_after_success_rate || 0);
+            summary = '累计价值 ' + num(lifetimeTotals.value_output || 0) + ' · 发布率 ' + pct(lifetimeTotals.publish_rate || lifetimeTotals.post_after_success_rate || 0);
             valueLabel = '价值';
             valueText = num(lifetimeTotals.value_output || 0);
           }
@@ -5082,6 +5636,7 @@
         return list.map(function (item, index) {
           var image = imageForTemplate(item);
           var thumbStyle = image ? 'background-image:url(' + image + ');' : 'background:' + templateMood(index) + ';';
+          var replayTooltip = safeText('成功复玩率\n第2次+成功生成 ' + replayEvidenceText(item) + '\n复玩用户 ' + num(replayUserCount(item)));
           return [
             '<tr class="' + (item.template_id === state.activeTemplateId ? 'is-active' : '') + '" data-template-pick="' + safeText(item.template_id) + '" id="' + (index === 0 ? 'template-table-anchor' : '') + '">',
               '<td class="num">' + num(index + 1) + '</td>',
@@ -5098,7 +5653,7 @@
               '<td class="num">' + num(item.success_users) + '</td>',
               '<td class="num">' + num(item.template_remix_events) + '</td>',
               '<td class="num">' + num(item.template_reremix) + '</td>',
-              '<td class="num">' + pct(item.replay_rate_7d) + '</td>',
+              '<td class="num" data-tooltip="' + replayTooltip + '">' + pct(item.replay_rate_7d) + '</td>',
               '<td class="num">' + pct(item.post_after_success_rate) + '</td>',
               '<td class="num">' + num(item.template_remix_events_per_day, 2) + '</td>',
               '<td class="num">' + num(item.active_days) + '</td>',
@@ -5154,7 +5709,7 @@
         var stories = {
           '入口吸引力': '点击 remix 已经冲到头部，适合做入口层判断。',
           '点击效率': '短期内就跑出高点击和不低成功生成，起势很快。',
-          '稳定主盘': '成功生成和复玩共同支撑，属于成熟盘。',
+          '稳定主盘': '成功生成和成功复玩共同支撑，属于成熟盘。',
           '起势最快': '上线时间短，但 remix/day 已经拉到全场最高。',
           '近期强势': '新模板里承接最好，容易继续追。',
           '可继续观察': '速度没有掉队，但还需要更多量验证。'
@@ -5163,7 +5718,7 @@
       }
 
       function activeTemplateSummary(item) {
-        return '当前只看累计 U / P / S 信号与生命周期趋势，正式 TCS 待补曝光用户 E。';
+        return '当前看客户端 try-now 漏斗与服务端发布归因，TCS 仍单独拆开。';
       }
 
       function activeTemplateCopy(item) {
@@ -5172,13 +5727,13 @@
           return '这支模板不是靠活得久堆出来的量，而是上线后立刻能吃点击。适合被放到模板页最前面做入口判断。';
         }
         if (item.replay_rate_7d >= 0.4) {
-          return '它的核心价值不只在首点，而在于用户愿意回头再点一次。适合归到稳定高质模板，而不是一次性冲量。';
+          return '它的核心价值不只在首点，而在于同一用户愿意再次成功生成。适合归到稳定高质模板，而不是一次性冲量。';
         }
         if (item.success_share_rate >= 0.08) {
           return '这支模板虽然不是最猛的冲量款，但分享承接更强，说明成片感和话题感都更容易外溢。';
         }
         if (item.post_after_success_rate >= 0.25) {
-          return '这支模板的价值在后链路承接，说明成片感和题材都更容易推动用户继续发帖。';
+          return '这支模板的价值在后链路承接，说明成片感和题材更容易推动内容进入发布态。';
         }
         return '当前这支模板更适合放在中腰部观察位：指标没有明显塌，但还需要更多量才能看清真正潜力。';
       }
@@ -5288,6 +5843,176 @@
             window.open(params.data.link, '_blank', 'noopener');
           }
         });
+      }
+
+      function renderActiveTimeChart(dataset) {
+        var el = document.getElementById('chart-active-time');
+        if (!el) return;
+        var chart = state.charts.activeTime || null;
+        if (chart && chart.getDom && chart.getDom() !== el) {
+          chart.dispose();
+          chart = null;
+        }
+        chart = chart || echarts.init(el);
+        state.charts.activeTime = chart;
+        var raw = dataset.raw || {};
+        var onlineRows = (raw.USER_ONLINE_TIME_ROWS || []).slice().sort(function (a, b) {
+          return String(a.day || '').localeCompare(String(b.day || ''));
+        });
+        var validTemplateIds = {};
+        dataset.rows.forEach(function (item) {
+          if (item && item.template_id) validTemplateIds[item.template_id] = true;
+        });
+        var publishRows = (raw.TEMPLATE_PUBLISH_TIMELINE_ROWS || []).filter(function (item) {
+          return item && item.template_id && validTemplateIds[item.template_id] && item.published_at;
+        });
+        var totalByDay = {};
+        onlineRows.forEach(function (item) {
+          totalByDay[item.day] = Number(item.total_sec_per_device || 0);
+        });
+        var publishCountByDay = {};
+        var publishPoints = publishRows.map(function (item, index) {
+          var day = item.publish_day || fmtDate(item.published_at);
+          publishCountByDay[day] = (publishCountByDay[day] || 0) + 1;
+          var slot = publishCountByDay[day] - 1;
+          var baseValue = totalByDay[day] || 0;
+          var yValue = baseValue + Math.min(18, slot * 3);
+          return [
+            normalizeChartTime(item.published_at),
+            yValue,
+            item.template_name || item.template_id,
+            item.template_id,
+            item.published_at,
+            day,
+            baseValue,
+            item.publish_hour,
+            slot
+          ];
+        });
+        el.setAttribute('data-online-row-count', String(onlineRows.length));
+        el.setAttribute('data-publish-point-count', String(publishPoints.length));
+        chart.setOption({
+          animationDuration: 500,
+          legend: {
+            top: 0,
+            left: 0,
+            textStyle: { color: '#767982', fontFamily: 'GeistMono', fontSize: 11 }
+          },
+          grid: { left: 56, right: 56, top: 48, bottom: 52 },
+          tooltip: {
+            appendToBody: true,
+            formatter: function (params) {
+              var data = params.data || [];
+              if (params.seriesName === '模板发布') {
+                return [
+                  '<b>' + safeText(data[2]) + '</b>',
+                  '发布时间 ' + safeText(fmtDateTime(normalizeChartTime(data[4]))),
+                  '当日合计 ' + num(data[6], 1) + ' s/设备'
+                ].join('<br/>');
+              }
+              var value = Array.isArray(data) ? data[1] : data;
+              var suffix = params.seriesName === '人均消费内容数' ? '' : ' s/设备';
+              return [
+                '<b>' + safeText(params.seriesName || '') + '</b>',
+                safeText(fmtDate(Array.isArray(data) ? data[0] : params.name)),
+                safeText(num(value, params.seriesName === '人均消费内容数' ? 2 : 1) + suffix)
+              ].join('<br/>');
+            }
+          },
+          xAxis: {
+            type: 'time',
+            nameTextStyle: { color: '#767982', fontFamily: 'GeistMono' },
+            splitLine: { lineStyle: { color: 'rgba(22,24,31,0.07)' } },
+            axisLabel: {
+              color: '#767982',
+              fontFamily: 'GeistMono',
+              formatter: function (value) {
+                return fmtDate(new Date(value).toISOString()).slice(5);
+              }
+            }
+          },
+          yAxis: [
+            {
+              type: 'value',
+              name: '秒/设备',
+              nameTextStyle: { color: '#767982', fontFamily: 'GeistMono' },
+              splitLine: { lineStyle: { color: 'rgba(22,24,31,0.07)' } },
+              axisLabel: { color: '#767982', fontFamily: 'GeistMono' }
+            },
+            {
+              type: 'value',
+              name: '内容/设备',
+              nameTextStyle: { color: '#767982', fontFamily: 'GeistMono' },
+              splitLine: { show: false },
+              axisLabel: { color: '#767982', fontFamily: 'GeistMono' }
+            }
+          ],
+          series: [
+            buildOnlineTimeSeries('Feed 首页', onlineRows, 'feed_sec_per_device', '#8ecde5', 0, false),
+            buildOnlineTimeSeries('其它场景', onlineRows, 'other_sec_per_device', '#b9c2cb', 0, false),
+            buildOnlineTimeSeries('合计在线时长', onlineRows, 'total_sec_per_device', '#ff6835', 0, true),
+            buildOnlineTimeSeries('人均消费内容数', onlineRows, 'contents_per_device', '#16171d', 1, false, true),
+            {
+              name: '模板发布',
+              type: 'scatter',
+              yAxisIndex: 0,
+              data: publishPoints,
+              symbol: 'diamond',
+              symbolSize: 12,
+              itemStyle: {
+                color: '#d6f400',
+                borderColor: '#16171d',
+                borderWidth: 1.5,
+                shadowBlur: 10,
+                shadowColor: 'rgba(22, 24, 31, 0.18)'
+              },
+              emphasis: {
+                scale: true,
+                itemStyle: { borderColor: '#ff6835', borderWidth: 2 }
+              },
+              z: 5
+            }
+          ]
+        });
+        chart.resize();
+        chart.off('click');
+        chart.on('click', function (params) {
+          if (params.seriesName === '模板发布' && params.data && params.data[3]) {
+            window.open(templateUrl(params.data[3]), '_blank', 'noopener');
+          }
+        });
+      }
+
+      function normalizeChartTime(value) {
+        if (!value) return '';
+        var text = String(value);
+        if (text.indexOf('T') === -1 && /^\d{4}-\d{2}-\d{2} /.test(text)) {
+          text = text.replace(' ', 'T');
+        }
+        if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(text)) {
+          text += 'Z';
+        }
+        return text;
+      }
+
+      function buildOnlineTimeSeries(name, rows, key, color, yAxisIndex, emphasis, dashed) {
+        return {
+          name: name,
+          type: 'line',
+          yAxisIndex: yAxisIndex || 0,
+          data: rows.map(function (item) {
+            return [item.day + 'T00:00:00Z', Number(item[key] || 0)];
+          }),
+          smooth: true,
+          symbolSize: emphasis ? 8 : 6,
+          lineStyle: {
+            width: emphasis ? 3 : 2,
+            color: color,
+            type: dashed ? 'dashed' : 'solid'
+          },
+          itemStyle: { color: color },
+          areaStyle: emphasis ? { color: 'rgba(255, 104, 53, 0.12)' } : null
+        };
       }
 
       function renderScatter(dataset) {
@@ -5436,6 +6161,40 @@
           };
         }
 
+        var refresh = document.getElementById('refresh-live-data');
+        if (refresh) {
+          refresh.disabled = state.isRefreshing;
+          refresh.onclick = refreshLiveData;
+        }
+
+        var startInput = document.getElementById('date-range-start');
+        var endInput = document.getElementById('date-range-end');
+        var applyDateRange = document.getElementById('apply-date-range');
+        var submitDateRange = function () {
+          if (!startInput || !endInput || state.isRefreshing) return;
+          var previous = getActiveTimeWindow();
+          var next = setDateRange(startInput.value, endInput.value);
+          startInput.value = next.startDay;
+          endInput.value = next.endDay;
+          if (previous.startDay === next.startDay && previous.endDay === next.endDay) {
+            syncMode();
+            return;
+          }
+          state.windowKey = 'current_17d';
+          refreshLiveData();
+        };
+        [startInput, endInput].forEach(function (input) {
+          if (!input) return;
+          input.disabled = state.isRefreshing;
+          input.onkeydown = function (event) {
+            if (event.key === 'Enter') submitDateRange();
+          };
+        });
+        if (applyDateRange) {
+          applyDateRange.disabled = state.isRefreshing;
+          applyDateRange.onclick = submitDateRange;
+        }
+
         bindTooltipLayer();
 
         if (!state.resizeBound) {
@@ -5452,23 +6211,53 @@
 
       function syncMode() {
         var jump = document.getElementById('jump-current-link');
-        var windowPill = document.getElementById('window-pill');
+        var startInput = document.getElementById('date-range-start');
+        var endInput = document.getElementById('date-range-end');
+        var applyDateRange = document.getElementById('apply-date-range');
         var headline = document.getElementById('status-headline');
         var subcopy = document.getElementById('status-subcopy');
+        var sourceStatus = document.getElementById('source-status');
+        var refresh = document.getElementById('refresh-live-data');
         var isPlanning = state.mode === 'planning';
         var isTemplate = state.mode === 'template';
-        var activeLabel = getWindowLabel(state.windowKey);
+        var selectedWindow = getActiveTimeWindow();
+        var activeLabel = state.isRefreshing && selectedWindow ? selectedWindow.label : getWindowLabel(state.windowKey);
+        var maxDay = getMaxSelectableDay();
         var activeTemplate = state.datasetMap ? getActiveTemplate(getActiveDataset(state.datasetMap)) : null;
         Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function (button) {
           button.classList.toggle('is-active', button.getAttribute('data-mode') === state.mode);
         });
-        if (windowPill) windowPill.textContent = isTemplate ? '上线以来逐日' : activeLabel.replace(' 至 ', ' → ');
+        if (startInput) {
+          startInput.min = LIVE_MIN_DAY;
+          startInput.max = maxDay;
+          startInput.value = selectedWindow.startDay;
+          startInput.disabled = state.isRefreshing;
+        }
+        if (endInput) {
+          endInput.min = LIVE_MIN_DAY;
+          endInput.max = maxDay;
+          endInput.value = selectedWindow.endDay;
+          endInput.disabled = state.isRefreshing;
+        }
+        if (applyDateRange) {
+          applyDateRange.disabled = state.isRefreshing;
+          applyDateRange.textContent = state.isRefreshing ? '刷新中' : '应用';
+        }
         if (headline) headline.textContent = isPlanning ? 'TCS 传播价值' : (isTemplate ? '模板详情' : '模板总览');
         if (subcopy) subcopy.textContent = isPlanning
           ? '单独看模板的传播价值，不和业务总盘混在一起。'
-          : (isTemplate && activeTemplate ? safeText(activeTemplate.template_name) + ' · 上线以来逐日趋势' : activeLabel);
+          : (isTemplate && activeTemplate ? safeText(activeTemplate.template_name) + ' · 客户端 try-now 漏斗 + 服务端内容发布' : activeLabel + (state.sourceMode === 'live' ? ' · App release · 已剔除 internal' : ''));
         if (jump) {
           jump.textContent = '打开源链接';
+        }
+        if (sourceStatus) {
+          var sourceClass = state.sourceMode === 'live' ? 'is-live' : (state.sourceMode === 'error' ? 'is-error' : 'is-static');
+          sourceStatus.className = 'source-status ' + sourceClass;
+          sourceStatus.innerHTML = '<span class="source-dot"></span><span>' + safeText(state.isRefreshing ? '正在刷新 PostHog' : state.sourceStatus) + '</span>';
+        }
+        if (refresh) {
+          refresh.disabled = state.isRefreshing;
+          refresh.textContent = state.isRefreshing ? '刷新中' : '刷新数据';
         }
       }
 
@@ -5493,31 +6282,49 @@
         });
       }
 
+      function buildDatasetMapFromRaw(raw) {
+        var sourceMap = buildWindowSources(raw);
+        return {
+          current_17d: enrichDataset(sourceMap.current_17d),
+          previous_17d: enrichDataset(sourceMap.previous_17d)
+        };
+      }
+
+      function applySourceData(raw) {
+        var datasetMap = buildDatasetMapFromRaw(raw);
+        var dataset = getActiveDataset(datasetMap);
+        state.datasetMap = datasetMap;
+        renderActiveMode(dataset);
+        renderTreemap(dataset);
+        if (state.mode === 'template') {
+          renderTemplateMode(dataset);
+          renderLeaderboards(dataset);
+          renderScatter(dataset);
+        }
+        bindEvents(datasetMap);
+        syncMode();
+      }
+
+      async function refreshLiveData() {
+        if (state.isRefreshing) return;
+        state.isRefreshing = true;
+        syncMode();
+        try {
+          var raw = await loadSourceData();
+          applySourceData(raw);
+        } finally {
+          state.isRefreshing = false;
+          syncMode();
+        }
+      }
+
       async function init() {
         try {
           var raw = await loadSourceData();
-          var sourceMap = buildWindowSources(raw);
-          var dataset = getActiveDataset({
-            current_17d: enrichDataset(sourceMap.current_17d),
-            previous_17d: enrichDataset(sourceMap.previous_17d)
-          });
-          var datasetMap = {
-            current_17d: enrichDataset(sourceMap.current_17d),
-            previous_17d: enrichDataset(sourceMap.previous_17d)
-          };
-          state.datasetMap = datasetMap;
           var app = document.getElementById('app');
           app.className = '';
           app.innerHTML = buildShell();
-          renderActiveMode(dataset);
-          renderTreemap(dataset);
-          if (state.mode === 'template') {
-            renderTemplateMode(dataset);
-            renderLeaderboards(dataset);
-            renderScatter(dataset);
-          }
-          bindEvents(datasetMap);
-          syncMode();
+          applySourceData(raw);
         } catch (error) {
           var app = document.getElementById('app');
           app.className = 'loading-state';

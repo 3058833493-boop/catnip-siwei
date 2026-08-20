@@ -1,0 +1,28 @@
+import { buildMetricsSource } from "../_lib/posthog-live-metrics.mjs";
+
+function json(payload, status = 200) {
+  return new Response(JSON.stringify(payload, null, 2), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+export async function onRequestGet({ request, env }) {
+  try {
+    const url = new URL(request.url);
+    const data = await buildMetricsSource(env, {
+      start: url.searchParams.get("start"),
+      end: url.searchParams.get("end"),
+    });
+    return json({ ok: true, data });
+  } catch (error) {
+    return json({
+      ok: false,
+      error: error && error.message ? error.message : String(error),
+      detail: error && error.payload ? error.payload : undefined,
+    }, error && error.status ? error.status : 500);
+  }
+}

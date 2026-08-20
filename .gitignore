@@ -5,3 +5,5 @@ desktop.ini
 *.tmp
 *.zip
 node_modules/
+.env
+.env.local
