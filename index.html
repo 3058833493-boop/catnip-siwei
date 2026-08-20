@@ -42,6 +42,7 @@
       --lime: #d6f400;
       --orange: #ff6835;
       --orange-soft: #ffcabd;
+      --danger: #e84d3d;
       --white: #ffffff;
       --shadow: 0 24px 80px rgba(32, 35, 46, 0.14);
       --radius-xl: 28px;
@@ -2753,6 +2754,270 @@
       animation: pulse 1s infinite ease-in-out;
     }
 
+    #app:not(.is-hydrated):not(.is-loading):not(.is-load-error) .board {
+      position: relative;
+      min-height: min(820px, calc(100vh - 56px));
+      background:
+        linear-gradient(180deg, rgba(248, 248, 249, 0.94), rgba(244, 245, 247, 0.9));
+    }
+
+    #app:not(.is-hydrated):not(.is-loading):not(.is-load-error) .board > * {
+      display: none;
+    }
+
+    #app:not(.is-hydrated):not(.is-loading):not(.is-load-error) .board::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.64) 42%, transparent 72%) -260px 0 / 260px 100% no-repeat,
+        linear-gradient(rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.74)) 16px 16px / calc(100% - 32px) 46px no-repeat,
+        linear-gradient(rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.66)) 18px 82px / calc(100% - 36px) 92px no-repeat,
+        linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)) 18px 194px / calc(48% - 24px) 178px no-repeat,
+        linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)) calc(48% + 12px) 194px / calc(52% - 30px) 520px no-repeat,
+        linear-gradient(rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.58)) 18px 392px / calc(48% - 24px) 322px no-repeat;
+      animation: skeletonSweep 1.35s infinite linear;
+    }
+
+    #app:not(.is-hydrated):not(.is-loading):not(.is-load-error) .board::after {
+      content: '正在连接 PostHog live 数据';
+      position: absolute;
+      left: 34px;
+      top: 96px;
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: rgba(22, 24, 31, 0.88);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0;
+      box-shadow: 0 14px 36px rgba(22, 24, 31, 0.18);
+    }
+
+    .loading-shell {
+      min-height: 100vh;
+    }
+
+    .loading-shell .board {
+      min-height: min(860px, calc(100vh - 56px));
+      background: rgba(247, 247, 248, 0.94);
+    }
+
+    .loading-visual {
+      display: grid;
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .loading-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(22, 24, 31, 0.05);
+    }
+
+    .loading-copy {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .loading-title {
+      margin: 0;
+      color: var(--ink);
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .loading-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      font-family: var(--font-mono);
+      letter-spacing: 0;
+    }
+
+    .loading-indicator {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #12131a;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      box-shadow: 0 18px 42px rgba(22, 24, 31, 0.2);
+      flex: 0 0 auto;
+    }
+
+    .loading-indicator::before {
+      content: '';
+      position: absolute;
+      inset: -7px;
+      border-radius: inherit;
+      border: 2px solid rgba(214, 244, 0, 0.34);
+      border-top-color: var(--lime);
+      animation: loadingSpin 1.1s linear infinite;
+    }
+
+    .loading-grid {
+      display: grid;
+      grid-template-columns: minmax(420px, 0.92fr) minmax(520px, 1.08fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .loading-stack {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .loading-card {
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(22, 24, 31, 0.05);
+    }
+
+    .loading-card::after,
+    .loading-line::after,
+    .loading-block::after,
+    .loading-tile::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
+      animation: shimmer 1.35s infinite;
+    }
+
+    .loading-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .loading-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .loading-metric {
+      position: relative;
+      overflow: hidden;
+      min-height: 134px;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(22, 24, 31, 0.04);
+    }
+
+    .loading-line,
+    .loading-block,
+    .loading-tile {
+      position: relative;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(22, 24, 31, 0.08);
+    }
+
+    .loading-line {
+      height: 12px;
+      width: var(--w, 100%);
+    }
+
+    .loading-block {
+      height: var(--h, 180px);
+      border-radius: 18px;
+      background:
+        linear-gradient(90deg, rgba(214, 244, 0, 0.28), transparent 48%),
+        rgba(22, 24, 31, 0.06);
+    }
+
+    .loading-heatmap {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 10px;
+      min-height: 194px;
+    }
+
+    .loading-heatmap-labels,
+    .loading-heatmap-grid {
+      display: grid;
+      grid-template-rows: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .loading-heatmap-grid {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+
+    .loading-cell {
+      border-radius: 8px;
+      background: rgba(255, 104, 53, var(--a, 0.16));
+    }
+
+    .loading-ranking {
+      display: grid;
+      gap: 12px;
+      min-height: 536px;
+    }
+
+    .loading-rank-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .loading-tile {
+      height: 168px;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(22, 24, 31, 0.02), rgba(22, 24, 31, 0.12)),
+        rgba(255, 255, 255, 0.76);
+    }
+
+    .load-error-card {
+      max-width: 720px;
+      margin: 12vh auto;
+      padding: 26px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(232, 77, 61, 0.18);
+      box-shadow: var(--shadow);
+    }
+
+    .load-error-card h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .load-error-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
     .hidden {
       display: none !important;
     }
@@ -2760,6 +3025,18 @@
     @keyframes pulse {
       0%, 100% { transform: scale(0.9); opacity: 0.72; }
       50% { transform: scale(1.1); opacity: 1; }
+    }
+
+    @keyframes shimmer {
+      100% { transform: translateX(100%); }
+    }
+
+    @keyframes loadingSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes skeletonSweep {
+      to { background-position: calc(100% + 260px) 0, 16px 16px, 18px 82px, 18px 194px, calc(48% + 12px) 194px, 18px 392px; }
     }
 
     @media (max-width: 1200px) {
@@ -2805,6 +3082,14 @@
 
       .active-time-chart {
         height: 340px;
+      }
+
+      .loading-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .loading-ranking {
+        min-height: 360px;
       }
     }
 
@@ -2888,6 +3173,28 @@
 
       .active-time-chart {
         height: 320px;
+      }
+
+      .loading-visual {
+        padding: 12px;
+      }
+
+      .loading-hero {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .loading-metrics,
+      .loading-rank-row {
+        grid-template-columns: 1fr;
+      }
+
+      .loading-heatmap {
+        grid-template-columns: 1fr;
+      }
+
+      .loading-heatmap-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
     }
   </style>
@@ -4260,6 +4567,120 @@
               '</div>',
               '<section id="panel-overview" class="panel overview-grid is-active"></section>',
               '<section id="panel-template" class="panel"></section>',
+            '</div>',
+          '</div>'
+        ].join('');
+      }
+
+      function loadingLines(widths) {
+        return widths.map(function (width) {
+          return '<div class="loading-line" style="--w:' + safeText(width) + '"></div>';
+        }).join('');
+      }
+
+      function loadingHeatmapCells() {
+        var levels = [0.16, 0.28, 0.44, 0.24, 0.52, 0.34, 0.2, 0.38, 0.48, 0.18, 0.3, 0.56, 0.26, 0.4, 0.22, 0.46, 0.32, 0.2, 0.5, 0.36, 0.18, 0.42, 0.24, 0.54, 0.3, 0.48, 0.2, 0.38, 0.58, 0.28, 0.44, 0.22];
+        return levels.map(function (alpha) {
+          return '<div class="loading-cell" style="--a:' + alpha + '"></div>';
+        }).join('');
+      }
+
+      function buildLoadingShell(message) {
+        var activeWindow = getActiveTimeWindow();
+        var rangeText = activeWindow ? activeWindow.label : '2026-08-01 至今日';
+        var loadingText = message || '正在连接 PostHog live 数据';
+        return [
+          '<div class="shell loading-shell" aria-live="polite" aria-busy="true">',
+            '<div class="board">',
+              '<div class="chrome">',
+                '<div class="chrome-left">',
+                  '<div class="traffic"><span></span><span></span><span></span></div>',
+                  '<div class="mode-toggle">',
+                    '<button class="mode-button is-active" type="button" disabled>总览</button>',
+                    '<button class="mode-button" type="button" disabled>模板</button>',
+                    '<button class="mode-button" type="button" disabled>TCS</button>',
+                  '</div>',
+                '</div>',
+                '<div class="chrome-center">',
+                  '<div class="time-controls">',
+                    '<div class="date-range-control">',
+                      '<div class="date-input-shell"><span>起</span><input type="date" value="' + safeText(activeWindow.startDay) + '" disabled></div>',
+                      '<span class="range-arrow">→</span>',
+                      '<div class="date-input-shell"><span>止</span><input type="date" value="' + safeText(activeWindow.endDay) + '" disabled></div>',
+                      '<button class="date-apply" type="button" disabled>加载中</button>',
+                    '</div>',
+                  '</div>',
+                '</div>',
+                '<div class="chrome-right">',
+                  '<button class="pill is-secondary" type="button" disabled>刷新数据</button>',
+                  '<button class="pill" type="button" disabled>打开源链接</button>',
+                '</div>',
+              '</div>',
+              '<div class="status-bar">',
+                '<div class="status-title">',
+                  '<div><h1 class="headline">模板总览</h1></div>',
+                  '<div class="source-status is-static"><span class="source-dot"></span><span>' + safeText(loadingText) + '</span></div>',
+                '</div>',
+                '<div class="subcopy">' + safeText(rangeText) + ' · 正在准备实时口径、内部用户过滤和模板榜单</div>',
+              '</div>',
+              '<div class="loading-visual">',
+                '<div class="loading-hero">',
+                  '<div class="loading-copy">',
+                    '<h2 class="loading-title">正在生成实时看板</h2>',
+                    '<p class="loading-subtitle">PostHog live · game_tasks · content_template · Internal users filter</p>',
+                  '</div>',
+                  '<div class="loading-indicator">LIVE</div>',
+                '</div>',
+                '<div class="loading-grid">',
+                  '<div class="loading-stack">',
+                    '<div class="loading-card">',
+                      '<div class="loading-card-head">' + loadingLines(['132px', '86px']) + '</div>',
+                      '<div class="loading-metrics">',
+                        [0, 1, 2, 3, 4, 5].map(function () {
+                          return '<div class="loading-metric">' + loadingLines(['58%', '82%', '44%']) + '</div>';
+                        }).join(''),
+                      '</div>',
+                    '</div>',
+                    '<div class="loading-card">',
+                      '<div class="loading-card-head">' + loadingLines(['148px', '76px']) + '</div>',
+                      '<div class="loading-heatmap">',
+                        '<div class="loading-heatmap-labels">' + loadingLines(['58px', '64px', '62px', '56px']) + '</div>',
+                        '<div class="loading-heatmap-grid">' + loadingHeatmapCells() + '</div>',
+                      '</div>',
+                    '</div>',
+                    '<div class="loading-card">',
+                      '<div class="loading-card-head">' + loadingLines(['136px', '84px']) + '</div>',
+                      '<div class="loading-block" style="--h:260px"></div>',
+                    '</div>',
+                  '</div>',
+                  '<div class="loading-stack">',
+                    '<div class="loading-card">',
+                      '<div class="loading-card-head">' + loadingLines(['118px', '68px']) + '</div>',
+                      '<div class="loading-ranking">',
+                        [0, 1, 2].map(function () {
+                          return '<div class="loading-rank-row"><div class="loading-tile"></div><div class="loading-tile"></div><div class="loading-tile"></div></div>';
+                        }).join(''),
+                      '</div>',
+                    '</div>',
+                    '<div class="loading-card">',
+                      '<div class="loading-card-head">' + loadingLines(['92px', '78px']) + '</div>',
+                      '<div class="loading-block" style="--h:180px"></div>',
+                    '</div>',
+                  '</div>',
+                '</div>',
+              '</div>',
+            '</div>',
+          '</div>'
+        ].join('');
+      }
+
+      function buildLoadErrorShell(error) {
+        var message = error && error.message ? error.message : String(error || '未知错误');
+        return [
+          '<div class="shell">',
+            '<div class="load-error-card">',
+              '<h1>看板加载失败</h1>',
+              '<p>' + safeText(message) + '</p>',
             '</div>',
           '</div>'
         ].join('');
@@ -6319,16 +6740,17 @@
       }
 
       async function init() {
+        var app = document.getElementById('app');
+        app.className = 'is-loading';
+        app.innerHTML = buildLoadingShell('正在连接 PostHog live 数据');
         try {
           var raw = await loadSourceData();
-          var app = document.getElementById('app');
-          app.className = '';
+          app.className = 'is-hydrated';
           app.innerHTML = buildShell();
           applySourceData(raw);
         } catch (error) {
-          var app = document.getElementById('app');
-          app.className = 'loading-state';
-          app.innerHTML = '<div>新页加载失败：' + safeText(error && error.message ? error.message : error) + '</div>';
+          app.className = 'is-load-error';
+          app.innerHTML = buildLoadErrorShell(error);
         }
       }
 
