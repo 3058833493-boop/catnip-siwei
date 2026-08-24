@@ -4140,9 +4140,11 @@
 
       function mergeLiveSource(staticData, liveData) {
         var templateMeta = mergePublishedTemplateMeta(staticData.PUBLISHED_TEMPLATE_META, liveData.PUBLISHED_TEMPLATE_META);
+        var templateMetaById = {};
         var templateNames = Object.assign({}, staticData.TEMPLATE_NAMES || {}, liveData.TEMPLATE_NAMES || {});
         templateMeta.forEach(function (item) {
           if (!item || !item.template_id) return;
+          templateMetaById[item.template_id] = true;
           templateNames[item.template_id] = templateNames[item.template_id] || item.title || item.template_name || item.template_id;
         });
         var staticRows = getPublishedTemplateRows(Object.assign({}, staticData, {
@@ -4154,7 +4156,7 @@
           if (row && row.template_id) staticById[row.template_id] = row;
         });
         var liveRows = (liveData.rows || liveData.TEMPLATE_OVERVIEW_ROWS || []).filter(function (item) {
-          return item && item.template_id;
+          return item && item.template_id && (templateMetaById[item.template_id] || staticById[item.template_id]);
         });
         var mergedRows = liveRows.map(function (item) {
           var staticRow = staticById[item.template_id] || {};

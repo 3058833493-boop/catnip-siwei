@@ -304,23 +304,6 @@ function querySet(start, end) {
       ORDER BY ct.published_at
       LIMIT 500
     `,
-    publishedTemplates: `
-      SELECT
-        toString(ct.template_id) AS template_id,
-        nullIf(ct.title, '') AS template_name,
-        toString(ct.status) AS status,
-        toString(ct.mode) AS mode,
-        toString(ct.published_at) AS published_at,
-        toString(toDate(ct.published_at)) AS publish_day,
-        toHour(ct.published_at) AS publish_hour
-      FROM postgres.content_templates AS ct
-      WHERE ct.status = 'published'
-        AND ct.template_id IS NOT NULL
-        AND toString(ct.template_id) != ''
-        AND toString(ct.template_id) != '(null)'
-      ORDER BY ct.published_at, ct.template_id
-      LIMIT 1000
-    `,
   };
 }
 
@@ -361,16 +344,14 @@ async function posthogQuery(env, sql, name) {
 
 function mergeByTemplate(clickRows, successRows, shareRows, repeatRows, templatePublishRows, publishedTemplateRows = []) {
   const byId = new Map();
-  const publishedIds = new Set(publishedTemplateRows.map((row) => row.template_id).filter(Boolean));
-  function get(id, options = {}) {
+  function get(id) {
     if (!id) return null;
-    if (publishedIds.size && !publishedIds.has(id) && !options.allowUnpublished) return null;
     if (!byId.has(id)) byId.set(id, { template_id: id, template_name: id });
     return byId.get(id);
   }
 
   publishedTemplateRows.forEach((row) => {
-    const item = get(row.template_id, { allowUnpublished: true });
+    const item = get(row.template_id);
     if (!item) return;
     item.template_name = row.template_name || row.template_id;
     item.template_status = row.status || "";
@@ -535,7 +516,6 @@ export async function buildMetricsSource(env, options = {}) {
     heatmapRows,
     onlineTimeRows,
     publishTimelineRows,
-    publishedTemplateRows,
   ] = await Promise.all([
     posthogQuery(env, queries.templateClicks, "template click rows"),
     posthogQuery(env, queries.templateSuccess, "template success rows"),
@@ -548,13 +528,12 @@ export async function buildMetricsSource(env, options = {}) {
     posthogQuery(env, queries.heatmap, "activity heatmap"),
     posthogQuery(env, queries.userOnlineTime, "user online time"),
     posthogQuery(env, queries.templatePublishTimeline, "template publish timeline"),
-    posthogQuery(env, queries.publishedTemplates, "published template list"),
   ]);
 
   const eventOverview = eventOverviewRows[0] || {};
   const contentOverview = contentOverviewRows[0] || {};
-  const rows = mergeByTemplate(clickRows, successRows, shareRows, repeatRows, templatePublishRows, publishedTemplateRows);
-  const publishedTemplateMeta = publishedTemplateRows.map((row) => ({
+  const rows = mergeByTemplate(clickRows, successRows, shareRows, repeatRows, templatePublishRows, publishTimelineRows);
+  const publishedTemplateMeta = publishTimelineRows.map((row) => ({
     template_id: row.template_id,
     title: row.template_name || row.template_id,
     status: row.status,
