@@ -1,7 +1,7 @@
 const DEFAULT_HOST = "https://us.posthog.com";
 const DEFAULT_PROJECT_ID = "425273";
 const DEFAULT_START = "2026-08-01T00:00:00Z";
-const DEFAULT_END = "2026-08-18T00:00:00Z";
+const FALLBACK_END = "2026-08-18T00:00:00Z";
 const INTERNAL_COHORT_ID = 310528;
 const TEMPLATE_SOURCES = ["content_template"];
 const EXCLUDED_CONTENT_SOURCES = ["content_studio", "workbench", "admin", "eval", "github_import"];
@@ -13,6 +13,14 @@ function envValue(env, key) {
 function isoDate(value, fallback) {
   const date = value ? new Date(value) : new Date(fallback);
   if (Number.isNaN(date.getTime())) return fallback;
+  return date.toISOString();
+}
+
+function defaultEndIso() {
+  const date = new Date();
+  if (Number.isNaN(date.getTime())) return FALLBACK_END;
+  date.setUTCDate(date.getUTCDate() + 1);
+  date.setUTCHours(0, 0, 0, 0);
   return date.toISOString();
 }
 
@@ -296,6 +304,23 @@ function querySet(start, end) {
       ORDER BY ct.published_at
       LIMIT 500
     `,
+    publishedTemplates: `
+      SELECT
+        toString(ct.template_id) AS template_id,
+        nullIf(ct.title, '') AS template_name,
+        toString(ct.status) AS status,
+        toString(ct.mode) AS mode,
+        toString(ct.published_at) AS published_at,
+        toString(toDate(ct.published_at)) AS publish_day,
+        toHour(ct.published_at) AS publish_hour
+      FROM postgres.content_templates AS ct
+      WHERE ct.status = 'published'
+        AND ct.template_id IS NOT NULL
+        AND toString(ct.template_id) != ''
+        AND toString(ct.template_id) != '(null)'
+      ORDER BY ct.published_at, ct.template_id
+      LIMIT 1000
+    `,
   };
 }
 
@@ -334,15 +359,29 @@ async function posthogQuery(env, sql, name) {
   return rowObjects(payload);
 }
 
-function mergeByTemplate(clickRows, successRows, shareRows, repeatRows, templatePublishRows) {
+function mergeByTemplate(clickRows, successRows, shareRows, repeatRows, templatePublishRows, publishedTemplateRows = []) {
   const byId = new Map();
-  function get(id) {
+  const publishedIds = new Set(publishedTemplateRows.map((row) => row.template_id).filter(Boolean));
+  function get(id, options = {}) {
+    if (!id) return null;
+    if (publishedIds.size && !publishedIds.has(id) && !options.allowUnpublished) return null;
     if (!byId.has(id)) byId.set(id, { template_id: id, template_name: id });
     return byId.get(id);
   }
 
+  publishedTemplateRows.forEach((row) => {
+    const item = get(row.template_id, { allowUnpublished: true });
+    if (!item) return;
+    item.template_name = row.template_name || row.template_id;
+    item.template_status = row.status || "";
+    item.template_mode = row.mode || "";
+    item.published_at = row.published_at || "";
+    item.publish_day = row.publish_day || "";
+    item.publish_hour = number(row.publish_hour);
+  });
   clickRows.forEach((row) => {
     const item = get(row.template_id);
+    if (!item) return;
     item.use_events = number(row.use_events);
     item.use_users = number(row.use_users);
     item.template_remix_events = item.use_events;
@@ -351,12 +390,14 @@ function mergeByTemplate(clickRows, successRows, shareRows, repeatRows, template
   });
   successRows.forEach((row) => {
     const item = get(row.template_id);
+    if (!item) return;
     item.result_events = number(row.result_events);
     item.success_events = number(row.success_events);
     item.success_users = number(row.success_users);
   });
   shareRows.forEach((row) => {
     const item = get(row.template_id);
+    if (!item) return;
     item.share_result_events = number(row.share_result_events);
     item.successful_share_count = number(row.successful_share_count);
     item.successful_share_users = number(row.successful_share_users);
@@ -364,6 +405,7 @@ function mergeByTemplate(clickRows, successRows, shareRows, repeatRows, template
   });
   repeatRows.forEach((row) => {
     const item = get(row.template_id);
+    if (!item) return;
     item.repeat_success_users = number(row.repeat_success_users);
     item.repeat_success_extra_events = number(row.repeat_success_extra_events);
     item.success_events_for_replay = number(row.success_events_for_replay);
@@ -372,6 +414,7 @@ function mergeByTemplate(clickRows, successRows, shareRows, repeatRows, template
   });
   templatePublishRows.forEach((row) => {
     const item = get(row.template_id);
+    if (!item) return;
     item.server_template_contents = number(row.server_template_contents);
     item.server_template_published = number(row.server_template_published);
     item.server_template_users = number(row.server_template_users);
@@ -477,7 +520,7 @@ function mapTemplateOverviewRows(rows) {
 
 export async function buildMetricsSource(env, options = {}) {
   const start = isoDate(options.start || envValue(env, "POSTHOG_METRICS_START"), DEFAULT_START);
-  const end = isoDate(options.end || envValue(env, "POSTHOG_METRICS_END"), DEFAULT_END);
+  const end = isoDate(options.end || envValue(env, "POSTHOG_METRICS_END"), defaultEndIso());
   const queries = querySet(start, end);
 
   const [
@@ -492,6 +535,7 @@ export async function buildMetricsSource(env, options = {}) {
     heatmapRows,
     onlineTimeRows,
     publishTimelineRows,
+    publishedTemplateRows,
   ] = await Promise.all([
     posthogQuery(env, queries.templateClicks, "template click rows"),
     posthogQuery(env, queries.templateSuccess, "template success rows"),
@@ -504,11 +548,28 @@ export async function buildMetricsSource(env, options = {}) {
     posthogQuery(env, queries.heatmap, "activity heatmap"),
     posthogQuery(env, queries.userOnlineTime, "user online time"),
     posthogQuery(env, queries.templatePublishTimeline, "template publish timeline"),
+    posthogQuery(env, queries.publishedTemplates, "published template list"),
   ]);
 
   const eventOverview = eventOverviewRows[0] || {};
   const contentOverview = contentOverviewRows[0] || {};
-  const rows = mergeByTemplate(clickRows, successRows, shareRows, repeatRows, templatePublishRows);
+  const rows = mergeByTemplate(clickRows, successRows, shareRows, repeatRows, templatePublishRows, publishedTemplateRows);
+  const publishedTemplateMeta = publishedTemplateRows.map((row) => ({
+    template_id: row.template_id,
+    title: row.template_name || row.template_id,
+    status: row.status,
+    mode: row.mode,
+    published_at: row.published_at,
+    publish_day: row.publish_day,
+    publish_hour: number(row.publish_hour),
+  }));
+  const templateNames = {};
+  publishedTemplateMeta.forEach((item) => {
+    templateNames[item.template_id] = item.title || item.template_id;
+  });
+  rows.forEach((item) => {
+    if (!templateNames[item.template_id]) templateNames[item.template_id] = item.template_name || item.template_id;
+  });
   const successUsers = number(eventOverview.template_success_users);
   const serverTemplateContents = number(contentOverview.template_contents);
   const serverTemplatePublished = number(contentOverview.template_published);
@@ -526,6 +587,8 @@ export async function buildMetricsSource(env, options = {}) {
     windowLabel: `${start.slice(0, 10)} 至 ${new Date(Date.parse(end) - 86400000).toISOString().slice(0, 10)}`,
     rows,
     TEMPLATE_OVERVIEW_ROWS: rows,
+    PUBLISHED_TEMPLATE_META: publishedTemplateMeta,
+    TEMPLATE_NAMES: templateNames,
     POST_OVERVIEW_ROWS: postOverviewRows,
     OVERVIEW_MIX_TOP50: overviewMix,
     OVERVIEW_TOTALS: {

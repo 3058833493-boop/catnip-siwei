@@ -4127,16 +4127,34 @@
         });
       }
 
+      function mergePublishedTemplateMeta(staticMeta, liveMeta) {
+        var byId = {};
+        (staticMeta || []).concat(liveMeta || []).forEach(function (item) {
+          if (!item || !item.template_id) return;
+          byId[item.template_id] = Object.assign({}, byId[item.template_id] || {}, item);
+        });
+        return Object.keys(byId).map(function (id) {
+          return byId[id];
+        });
+      }
+
       function mergeLiveSource(staticData, liveData) {
-        var templateNames = staticData.TEMPLATE_NAMES || {};
-        var staticRows = getPublishedTemplateRows(staticData, templateNames);
+        var templateMeta = mergePublishedTemplateMeta(staticData.PUBLISHED_TEMPLATE_META, liveData.PUBLISHED_TEMPLATE_META);
+        var templateNames = Object.assign({}, staticData.TEMPLATE_NAMES || {}, liveData.TEMPLATE_NAMES || {});
+        templateMeta.forEach(function (item) {
+          if (!item || !item.template_id) return;
+          templateNames[item.template_id] = templateNames[item.template_id] || item.title || item.template_name || item.template_id;
+        });
+        var staticRows = getPublishedTemplateRows(Object.assign({}, staticData, {
+          PUBLISHED_TEMPLATE_META: templateMeta
+        }), templateNames);
         var staticById = {};
         var liveById = {};
         staticRows.forEach(function (row) {
           if (row && row.template_id) staticById[row.template_id] = row;
         });
         var liveRows = (liveData.rows || liveData.TEMPLATE_OVERVIEW_ROWS || []).filter(function (item) {
-          return item && item.template_id && staticById[item.template_id];
+          return item && item.template_id;
         });
         var mergedRows = liveRows.map(function (item) {
           var staticRow = staticById[item.template_id] || {};
@@ -4152,7 +4170,7 @@
         });
         var allRows = mergedRows.concat(missingRows);
         var publishTimelineRows = (liveData.TEMPLATE_PUBLISH_TIMELINE_ROWS || []).filter(function (item) {
-          return item && item.template_id && staticById[item.template_id];
+          return item && item.template_id;
         }).map(function (item) {
           var staticRow = staticById[item.template_id] || {};
           return Object.assign({}, item, {
@@ -4173,7 +4191,7 @@
           TEMPLATE_PUBLISH_TIMELINE_ROWS: publishTimelineRows,
           POST_OVERVIEW_ROWS: liveData.POST_OVERVIEW_ROWS || staticData.POST_OVERVIEW_ROWS || [],
           OVERVIEW_MIX_TOP50: liveMix.length ? liveMix : (staticData.OVERVIEW_MIX_TOP50 || []),
-          PUBLISHED_TEMPLATE_META: staticData.PUBLISHED_TEMPLATE_META || [],
+          PUBLISHED_TEMPLATE_META: templateMeta,
           TEMPLATE_NAMES: templateNames
         });
       }
