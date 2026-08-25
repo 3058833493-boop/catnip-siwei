@@ -30,7 +30,7 @@
     }
 
     :root {
-      --bg: #c8c9cf;
+      --bg: #eaebee;
       --panel: rgba(248, 248, 249, 0.88);
       --panel-strong: rgba(255, 255, 255, 0.98);
       --panel-line: rgba(22, 24, 31, 0.08);
@@ -44,7 +44,7 @@
       --orange-soft: #ffcabd;
       --danger: #e84d3d;
       --white: #ffffff;
-      --shadow: 0 24px 80px rgba(32, 35, 46, 0.14);
+      --shadow: 0 16px 44px rgba(32, 35, 46, 0.1);
       --radius-xl: 28px;
       --radius-lg: 20px;
       --radius-md: 14px;
@@ -56,16 +56,23 @@
     }
 
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    html {
+      min-height: 100%;
+      scroll-behavior: smooth;
+      background: var(--bg);
+    }
+
     body {
+      min-height: 100vh;
       margin: 0;
       font-family: var(--font-body);
       color: var(--ink);
-      background:
-        radial-gradient(circle at top left, rgba(255, 255, 255, 0.65), transparent 30%),
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.45), transparent 28%),
-        linear-gradient(180deg, #d1d2d8 0%, #c1c3ca 100%);
+      background: var(--bg);
       letter-spacing: 0.01em;
+    }
+
+    #app {
+      min-height: 100vh;
     }
 
     a {
@@ -80,13 +87,15 @@
 
     .shell {
       max-width: var(--max);
+      min-height: 100vh;
       margin: 0 auto;
-      padding: 28px;
+      padding: 24px 28px 32px;
     }
 
     .board {
-      background: rgba(247, 247, 248, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.75);
+      min-height: calc(100vh - 56px);
+      background: #f7f8fa;
+      border: 1px solid rgba(22, 24, 31, 0.07);
       border-radius: 24px;
       box-shadow: var(--shadow);
       overflow: hidden;
@@ -2416,8 +2425,15 @@
       grid-template-columns: minmax(560px, 1.26fr) minmax(340px, 0.74fr);
       align-items: stretch;
       gap: 12px;
-      padding: 10px 12px 12px;
+      padding: 12px 14px 16px;
       height: var(--template-workspace-height, auto);
+      background: #f4f5f7;
+    }
+
+    .template-panel .card {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(22, 24, 31, 0.07);
+      box-shadow: 0 1px 2px rgba(22, 24, 31, 0.025);
     }
 
     .template-panel .overview-left,
@@ -2510,7 +2526,10 @@
     .template-hero .kpi {
       min-height: 64px;
       padding: 8px 10px;
+      background: #f7f8fa;
+      border-color: rgba(22, 24, 31, 0.055);
       cursor: help;
+      container-type: inline-size;
     }
 
     .template-hero .kpi-label {
@@ -2522,12 +2541,60 @@
       text-overflow: ellipsis;
     }
 
-    .template-hero .kpi-value {
+    .template-hero .kpi-reading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
       margin-top: 5px;
+    }
+
+    .template-hero .kpi-value {
       font-size: 24px;
       line-height: 1;
       letter-spacing: 0;
       white-space: nowrap;
+    }
+
+    .template-hero .kpi-evidence {
+      display: grid;
+      flex: 0 1 auto;
+      gap: 2px;
+      min-width: 0;
+      justify-items: end;
+      padding-bottom: 1px;
+      text-align: right;
+    }
+
+    .template-hero .kpi-evidence strong {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 400;
+      line-height: 1;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .template-hero .kpi-evidence span {
+      max-width: 100%;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    @container (max-width: 125px) {
+      .template-hero .kpi-reading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .template-hero .kpi-evidence {
+        justify-items: start;
+        text-align: left;
+      }
     }
 
     .template-hero .kpi-note {
@@ -2864,6 +2931,7 @@
       min-height: 210px;
       flex: 1 1 auto;
       border-radius: 12px;
+      background: #fbfbfc;
     }
 
     .template-panel .overview-right > .card {
@@ -2872,6 +2940,52 @@
       height: 100%;
       min-height: 0;
       overflow: hidden;
+      container-type: inline-size;
+    }
+
+    @container (max-width: 380px) {
+      .template-panel .overview-right > .card .card-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .template-panel .overview-right > .card .segmented-control {
+        align-self: stretch;
+      }
+
+      .template-panel .overview-right > .card .segmented-control button {
+        flex: 1 1 0;
+      }
+
+      .template-rank-list .rank-item.is-active {
+        grid-template-columns: 32px 88px minmax(0, 1fr);
+        gap: 10px;
+        min-height: 150px;
+        padding: 12px 10px;
+      }
+
+      .template-rank-list .rank-item.is-active .rank-thumb {
+        min-height: 126px;
+        border-radius: 14px;
+      }
+
+      .template-rank-list .rank-item.is-active .rank-main strong {
+        font-size: 19px;
+        line-height: 1.05;
+        word-break: normal;
+        overflow-wrap: break-word;
+      }
+
+      .template-rank-list .rank-item.is-active .rank-main span,
+      .template-rank-list .rank-item.is-active .rank-item-meta {
+        font-size: 11px;
+      }
+
+      .template-rank-list .rank-item.is-active .rank-item-meta {
+        margin-top: 8px;
+        line-height: 1.4;
+      }
     }
 
     @media (min-height: 850px) {
@@ -2894,8 +3008,11 @@
       }
 
       .template-panel .template-hero .kpi-value {
-        margin-top: 8px;
         font-size: 28px;
+      }
+
+      .template-panel .template-hero .kpi-reading {
+        margin-top: 8px;
       }
 
       .template-panel .template-trend-card {
@@ -6587,11 +6704,11 @@
               '<div class="hero-kpis">',
                 heroKpi('使用次数', num(usageCount), 'content_template_runs.user_run；' + sourceNote),
                 heroKpi('使用用户', num(userCount), 'DISTINCT r.user_id；默认 external'),
-                heroKpi('终态成功率', formatSampleRate(successRate, successEvents, terminalRuns), 'run.status=succeeded / (succeeded + failed) · ' + num(successEvents) + ' / ' + num(terminalRuns)),
-                heroKpi('发布转化率', pct(publishRate), 'game_tasks.status=published / 全部 user_run · ' + templatePublishedEstimateText(item) + ' / ' + num(usageCount)),
-                heroKpi('作者分享率', pct(selfShareRate), '自己分享内容 / 模板系内容 · ' + num(item.template_self_shared_contents || 0) + ' / ' + num(shareDenominator)),
-                heroKpi('内容分享率', pct(allShareRate), '全部外部用户分享内容 / 模板系内容 · ' + num(item.template_all_shared_contents || 0) + ' / ' + num(shareDenominator)),
-                heroKpi('终态样本', num(terminalRuns), '成功 ' + num(successEvents) + ' · 失败 ' + num(failureEvents) + '；pending/running 不进分母'),
+                heroKpi('终态成功率', formatSampleRate(successRate, successEvents, terminalRuns), 'run.status=succeeded / (succeeded + failed) · ' + num(successEvents) + ' / ' + num(terminalRuns), num(successEvents) + ' / ' + num(terminalRuns), '成功 / 终态'),
+                heroKpi('发布转化率', pct(publishRate), 'game_tasks.status=published / 全部 user_run · ' + templatePublishedEstimateText(item) + ' / ' + num(usageCount), templatePublishedEstimateText(item) + ' / ' + num(usageCount), '发布 / 使用'),
+                heroKpi('作者分享率', pct(selfShareRate), '自己分享内容 / 模板系内容 · ' + num(item.template_self_shared_contents || 0) + ' / ' + num(shareDenominator), num(item.template_self_shared_contents || 0) + ' / ' + num(shareDenominator), '作者分享 / 内容'),
+                heroKpi('内容分享率', pct(allShareRate), '全部外部用户分享内容 / 模板系内容 · ' + num(item.template_all_shared_contents || 0) + ' / ' + num(shareDenominator), num(item.template_all_shared_contents || 0) + ' / ' + num(shareDenominator), '分享 / 内容'),
+                heroKpi('终态样本', num(terminalRuns), '成功 ' + num(successEvents) + ' · 失败 ' + num(failureEvents) + '；pending/running 不进分母', num(successEvents) + ' / ' + num(failureEvents), '成功 / 失败'),
                 heroKpi('上线周期', num(item.tracked_days || 0) + ' 天', safeText(fmtDate(item.launch_at) + ' → ' + (item.live_template_run_backed ? getMaxSelectableDay() : '2026-08-18'))),
               '</div>',
             '</div>',
@@ -6599,11 +6716,20 @@
         ].join('');
       }
 
-      function heroKpi(label, value, note) {
+      function heroKpi(label, value, note, evidenceValue, evidenceLabel) {
+        var evidence = evidenceValue ? [
+          '<div class="kpi-evidence">',
+            '<strong>' + safeText(evidenceValue) + '</strong>',
+            '<span>' + safeText(evidenceLabel || '') + '</span>',
+          '</div>'
+        ].join('') : '';
         return [
           '<div class="kpi" data-tooltip="' + safeText(label + '\n' + note) + '">',
             '<div class="kpi-label">' + safeText(label) + '</div>',
-            '<div class="kpi-value">' + safeText(value) + '</div>',
+            '<div class="kpi-reading">',
+              '<div class="kpi-value">' + safeText(value) + '</div>',
+              evidence,
+            '</div>',
             '<div class="kpi-note">' + safeText(note) + '</div>',
           '</div>'
         ].join('');
