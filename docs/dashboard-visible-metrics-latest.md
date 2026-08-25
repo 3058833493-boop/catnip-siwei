@@ -17,12 +17,13 @@
 
 API 通过 PostHog project `425273` 的 HogQL 查询读取 `events` 和 `postgres.*` 数仓表。响应均为 `Cache-Control: no-store`，网页请求也使用 `cache: 'no-store'`。
 
-2026-08-25 16:30（Asia/Shanghai）本地实时抽样结果：
+2026-08-25 18:15（Asia/Shanghai）按修正后查询本地实时抽样结果：
 
 - 顶部窗口：`2026-08-01` 至 `2026-08-25`。
 - `content_templates` 中符合页面展示条件的已发布模板：56 个。
 - `/api/template-metrics` 返回 198 条模板记录，其中已发布且有 `published_at` 的记录为 56 条。网页只展示这 56 条。
-- 当前窗口 `game_tasks` 非内部、非删除、非排除来源内容：3,331 条，其中 `source='content_template'` 为 982 条。
+- 当前窗口用户创作来源白名单内容：3,312 条；模板系血缘内容 1,017 条，其中模板创建 982 条、模板 Remix 35 条。
+- 当前窗口模板系已发布内容 159 条，模板发布率约 15.63%。
 - 在线时长有 96 个有效记录日。该曲线按需求从最早有效记录开始，不受顶部开始日截断，只受结束日上限约束。
 
 Markdown 是口径快照，不会自行刷新；网页上的数字仍由上述 API 实时重算。
@@ -49,6 +50,8 @@ AND ifNull(toString(properties.channel_name), '') != 'testflight'
 1. PostHog Cohort `Internal users`，当前代码中的 `cohort_id=310528`。
 2. `postgres.app_user.is_internal=true` 或 `is_internal_virtual_user=true` 对应的 `usr_id`。
 3. 上述内部账号经 `postgres.user_devices` 映射出的 `device_id`。
+
+所有客户端 `usr_id` / `device_id` 与数仓字段的关联都必须对两侧执行 `lower(toString(...))`。iOS 上报 UUID 大多包含大写字符，Postgres 保存小写；缺少 `lower()` 不会报错，但会使权威内部账号过滤静默失效。
 
 服务端 `game_tasks`、模板内容归因和模板生命周期查询排除：
 
@@ -77,11 +80,20 @@ AND NOT app_user.is_internal_virtual_user
 g.created_at >= start
 AND g.created_at < end
 AND g.deleted_at IS NULL
-AND g.source NOT IN ('content_studio', 'workbench', 'admin', 'eval', 'github_import')
+AND g.source IN ('user_app','content_template','user_remix_app','user_replace_app','user_copy_app')
 AND external user
 ```
 
-按当前业务要求，模板来源只认 `source='content_template'`，明确忽略 `user_replace_app`。这与通用 analytics skill 中将两个来源合并的标准不同，是本网页的有意特例。
+`source` 使用白名单，避免 `cap`、`creatorlab`、`template`、`relay`、`creation_v2_temp` 或未来新增的平台链路自动污染用户内容分母。新增用户创作链路必须显式评审后加入白名单。
+
+模板系内容不再仅按 `source` 判断，而要求以下血缘成立：
+
+```text
+game_tasks.content_source_id -> content_templates.template_id
+AND game_tasks.source IN ('content_template','user_remix_app')
+```
+
+其中 `content_template` 是模板创建，`user_remix_app` 且有模板血缘的是模板 Remix。`user_replace_app` 属于换素材路径，当前数据不携带模板血缘，因此保留在“全部用户内容”分母，但天然不进入模板系指标；这不是人为特例。
 
 ## 3. 模板总览
 
@@ -89,34 +101,38 @@ AND external user
 
 | 页面指标 | 当前计算 | 数据源 | 时间 | 实时状态 |
 | --- | --- | --- | --- | --- |
-| 模板占比 | `source='content_template'` 的内容数 / 全部符合基础过滤的 `game_tasks` 内容数 | `postgres.game_tasks` | 顶部日期窗 | 实时 |
+| 模板占比 | 有模板血缘的 `content_template` + `user_remix_app` 内容数 / 用户创作来源白名单内容数 | `postgres.game_tasks` + `postgres.content_templates` | 顶部日期窗 | 实时 |
 | 内容发布率 | `is_draft=false` 的内容数 / 全部符合基础过滤的内容数 | `postgres.game_tasks` | 顶部日期窗 | 实时 |
-| 模板发布率 | `source='content_template' AND is_draft=false` / `source='content_template'` | `postgres.game_tasks` | 顶部日期窗 | 实时 |
+| 模板发布率 | 模板系内容中 `is_draft=false` / 全部模板系内容 | `postgres.game_tasks` + `postgres.content_templates` | 顶部日期窗 | 实时 |
 | Remix 发布率 | `source='user_remix_app' AND is_draft=false` / `source='user_remix_app'` | `postgres.game_tasks` | 顶部日期窗 | 实时 |
-| Try Now 成功率 | `template_try_now_result(success='1')` 事件数 / 全部 `template_try_now_result` 事件数 | PostHog `events` | 顶部日期窗 | 实时，但受客户端埋点完整性影响 |
+| Try Now 成功率 | `template_try_now_result(success='1')` 事件数 / 全部 `template_try_now_result` 事件数 | PostHog `events`，iOS + Android | 顶部日期窗 | 实时，但受客户端埋点完整性影响 |
 | 作者分享率 | 被内容作者本人点过分享的去重模板系内容数 / 窗口内创建的去重模板系内容数 | `share_channel_click` + 模板内容归因 | 顶部日期窗 | 实时 |
 | 内容分享率 | 被任意外部用户点过分享的去重模板系内容数 / 窗口内创建的去重模板系内容数 | `share_channel_click` + 模板内容归因 | 顶部日期窗 | 实时 |
 
 作者分享率与内容分享率是内容维度，不是点击次数或用户比例。同一内容分享多次只进入一次分子。
 
-模板系内容分母由以下内容血缘合并后按 `content_id` 去重：
+模板系内容分母由同一套血缘规则生成，并按 `content_id` 去重：
 
 ```text
-content_template_runs.run_type='user_run' -> game_id
-UNION
-game_tasks.source='user_remix_app' -> content_source_id 对应 template_id
+game_tasks.source IN ('content_template','user_remix_app')
+AND game_tasks.content_source_id -> content_templates.template_id
 ```
+
+这里的关联键明确是 `game_tasks.content_source_id`，不是 `game_tasks.template_id`；后者在用户内容上没有可用值。普通 `user_remix_app` 若没有模板血缘不会进入模板分享分母。
 
 分享动作使用 `share_channel_click`，包括端内动作，不要求 `share_result` 成功。只有带有效 `content_id` 且能关联回模板系内容的点击可以进入计算。
 
 ### 3.2 活跃分布热区
 
 - 事件：`template_try_now_click`。
+- 端覆盖：当前仅 iOS 有数据；Android 为 0，不能解读为双端总量。
 - 值：每天每个时段的事件次数，不按用户去重。
 - 时段：`00:00-05:59`、`06:00-11:59`、`12:00-17:59`、`18:00-23:59`。
 - 时间：顶部日期窗。
 - 过滤：完整 App release 过滤和内部用户过滤。
 - 页面默认折叠。
+
+Android 模板曝光/点击埋点上线后，这一指标会出现由覆盖变化引起的阶跃，不能直接解释为业务增长。若日期窗包含 `2026-08-09` 至 `2026-08-12`，对应格子显示为灰色虚线，提示客户端事件采集缺口。
 
 风险：当前 HogQL 直接对 `timestamp` 使用 `toDate/toHour`，没有显式业务时区转换。热区适合看相对分布，不应直接当作严格的中国本地小时口径。
 
@@ -143,24 +159,26 @@ game_tasks.source='user_remix_app' -> content_source_id 对应 template_id
 
 | 分类 | 条件 |
 | --- | --- |
-| 高速新模板 | `active_days <= 7` 且 `template_try_now_click / active_days >= 6` |
+| 高速新模板 | 窗口内实际在线天数 `<= 7`，且 iOS `template_try_now_click / 实际在线天数 >= 6` |
 | 高发布承接 | 未进入高速新模板，且 `server_template_published / server_template_contents >= 25%`，同时 `success_users >= 5` |
 | 高分享承接 | 未进入前两类，且 `template_all_shared_contents / template_created_contents >= 10%`，同时分母至少 3 个内容 |
 | 观察池 | 未进入前三类 |
 
-风险：高速新模板仍使用旧客户端点击速度，`active_days` 是窗口内发生点击的去重日期数，并非模板实际在线天数；高发布承接也仍使用窗口内 `game_tasks source='content_template'` 归因和客户端成功用户门槛。该模块实时刷新，但目前是混合口径。
+实际在线天数为 `min(窗口天数, 模板从可观测上线日至窗口结束的自然日数)`。可观测上线日默认取 `published_at`；若窗口内首个点击早于后台当前 `published_at`，取两者中更早的日期，避免状态回写把分母压得不合理。上线已久但只在少数日期发生点击的模板不会再被误判为“高速新”。点击分子仍为 iOS 单端；高发布承接改用统一模板血缘集合，但仍叠加客户端成功用户门槛，因此该模块是混合口径。
 
 ### 3.5 分榜排名
 
 当前只展示模板榜，不再展示用户榜和总排名。
 
 - 入榜集合：已发布且有 `published_at` 的模板。
-- 排列方式：按发布时间正序或倒序，按钮切换方向。
+- 排列方式：右上角可在“remix 数量”和“发布时间”之间切换。
+- `remix 数量`：按窗口内 `template_try_now_click` 次数降序；当前是 iOS 单端口径。
+- `发布时间`：按发布时间排序，再次点击同一按钮切换正序或倒序。
 - 卡片外显的 `remix`：窗口内 `template_try_now_click` 次数，即 `template_remix_events`。
 - 标题与发布时间：实时读取 `postgres.content_templates`。
 - 封面：使用本地维护的模板封面映射；API 当前没有实时返回封面字段。
 
-因此“卡片顺序”是发布时间，“卡片上的 remix 数字”仍是窗口内客户端点击量，两者不要混为同一排序指标。
+因此卡片顺序取决于当前选中的排序模式；`remix` 数字始终是窗口内客户端点击量，不是服务端 `user_run` 使用次数。
 
 ### 3.6 分榜下方三项统计
 
@@ -174,19 +192,21 @@ game_tasks.source='user_remix_app' -> content_source_id 对应 template_id
 
 ### 3.7 速度榜
 
-当前实际口径：
+当前口径：
 
 ```text
-速度 = 窗口内 template_try_now_click 次数
-     / 窗口内发生过 template_try_now_click 的去重日期数
+速度 = 窗口内 iOS template_try_now_click 次数
+     / min(窗口天数, 模板从可观测上线日至窗口结束的自然日数)
 ```
 
 - 排名按速度降序，展示前 8 个大于 0 的模板。
 - 跟随顶部日期窗并从 PostHog 实时刷新。
-- 分子不是最新服务端 `content_template_runs.user_run` 使用次数。
-- 分母不是模板在窗口内实际在线天数，只统计有点击的日期，因此可能高估低频模板速度。
+- 分子是 iOS 单端客户端点击，不是服务端 `content_template_runs.user_run` 使用次数。
+- 页面 tooltip 同时展示“实际在线天数”和“有点击天数”，但只有实际在线天数进入分母。
+- 若首个点击早于 `published_at`，可观测上线日取两者中更早者，避免后台发布时间回写造成速度虚高。
+- Android 点击埋点上线后会出现测量口径断点。
 
-结论：速度榜“数据是实时的”，但“口径不是最新服务端口径”。在对齐前不建议用它做正式模板效率结论。
+结论：速度榜可用于比较当前 iOS 入口吸引力，不应当作双端使用速度或服务端生成速度。
 
 ## 4. 模板详情
 
@@ -311,14 +331,15 @@ WHERE run_type='user_run'
 
 ## 6. 当前已知边界
 
-1. `2026-08-09` 至 `2026-08-12` 存在 PostHog 客户端事件采集缺口。`game_tasks`、`content_template_runs` 等服务端数仓指标优先级更高；Try Now 成功率、热区、速度榜和分享点击会受影响。
-2. 总览模板来源刻意只算 `content_template`，不算 `user_replace_app`。
-3. 分享率以 `share_channel_click` 为行为证据，不等于“外部平台确认发布成功率”。
-4. 模板详情分享率仍是顶部窗口值，和同页生命周期 KPI 的时间范围不同。
-5. 速度榜仍是 `template_try_now_click / 有点击日期数`，尚未对齐服务端 run 口径。
-6. 模板折线历史只到 `2026-08-18`，尚未实时续写。
-7. 模板标题可由 `content_templates.title` 实时补充；封面仍依赖人工维护的本地映射。
-8. 发布转化使用 `game_tasks.status='published'`，而总览内容/模板发布率使用 `is_draft=false`。二者业务问题不同，不能直接对数。
+1. `2026-08-09` 至 `2026-08-12` 存在 PostHog 客户端事件采集缺口。页面会显示提示，并在热区将对应日期标灰；`game_tasks`、`content_template_runs` 等服务端指标不受影响。
+2. `template_try_now_click`、`template_click`、`template_show` 当前实际是 iOS 单端。Try Now 成功率的 `template_try_now_result` 含少量 Android 数据，因此同页客户端指标的端覆盖并不完全一致。
+3. 模板系按 `content_source_id` 血缘判断。`user_replace_app` 保留在全部用户内容分母，但因无模板血缘不进入模板系；普通无模板血缘 Remix 同样不进入。
+4. 分享率以 `share_channel_click` 为行为证据，不等于“外部平台确认发布成功率”。
+5. 模板详情分享率仍是顶部窗口值，和同页生命周期 KPI 的时间范围不同。
+6. 速度榜是 iOS 点击 / 实际在线天数，不是双端服务端 run 速度。
+7. 模板折线历史只到 `2026-08-18`，尚未实时续写。
+8. 模板标题可由 `content_templates.title` 实时补充；封面仍依赖人工维护的本地映射。
+9. 发布转化使用 `game_tasks.status='published'`，而总览内容/模板发布率使用 `is_draft=false`。这是与后端页面对数的既定口径，当前不单方面修改。
 
 ## 7. 代码位置
 

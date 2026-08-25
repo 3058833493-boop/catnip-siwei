@@ -3,8 +3,8 @@ const DEFAULT_PROJECT_ID = "425273";
 const DEFAULT_START = "2026-08-01T00:00:00Z";
 const FALLBACK_END = "2026-08-18T00:00:00Z";
 const INTERNAL_COHORT_ID = 310528;
-const TEMPLATE_SOURCES = ["content_template"];
-const EXCLUDED_CONTENT_SOURCES = ["content_studio", "workbench", "admin", "eval", "github_import"];
+const USER_CONTENT_SOURCES = ["user_app", "content_template", "user_remix_app", "user_replace_app", "user_copy_app"];
+const TEMPLATE_LINEAGE_SOURCES = ["content_template", "user_remix_app"];
 
 function envValue(env, key) {
   return env && env[key] ? String(env[key]) : "";
@@ -86,7 +86,7 @@ function internalUserSubquery() {
 
 function internalDeviceSubquery() {
   return `
-    SELECT toString(device_id)
+    SELECT lower(toString(device_id))
     FROM postgres.user_devices
     WHERE lower(toString(user_id)) IN (${internalUserSubquery()})
   `;
@@ -106,7 +106,7 @@ function appEventFilter(from, to) {
       WHERE cohort_id = ${INTERNAL_COHORT_ID}
     )
     AND lower(toString(properties.usr_id)) NOT IN (${internalUserSubquery()})
-    AND toString(properties.device_id) NOT IN (${internalDeviceSubquery()})
+    AND lower(toString(properties.device_id)) NOT IN (${internalDeviceSubquery()})
   `;
 }
 
@@ -123,7 +123,7 @@ function appEventHistoryFilter(to) {
       WHERE cohort_id = ${INTERNAL_COHORT_ID}
     )
     AND lower(toString(properties.usr_id)) NOT IN (${internalUserSubquery()})
-    AND toString(properties.device_id) NOT IN (${internalDeviceSubquery()})
+    AND lower(toString(properties.device_id)) NOT IN (${internalDeviceSubquery()})
   `;
 }
 
@@ -132,7 +132,7 @@ function serverContentFilter(from, to) {
     g.created_at >= toDateTime('${from}')
     AND g.created_at < toDateTime('${to}')
     AND g.deleted_at IS NULL
-    AND toString(g.source) NOT IN (${quotedList(EXCLUDED_CONTENT_SOURCES)})
+    AND toString(g.source) IN (${quotedList(USER_CONTENT_SOURCES)})
     AND NOT ifNull(u.is_internal, false)
     AND NOT ifNull(u.is_internal_virtual_user, false)
   `;
@@ -152,32 +152,16 @@ function templateContentCtes(from, to) {
     template_content_raw AS (
       SELECT
         toString(g.id) AS content_id,
-        toString(r.template_id) AS template_id,
+        toString(ct.template_id) AS template_id,
         lower(toString(g.user_id)) AS author_id,
         g.created_at AS created_at,
-        'template_run' AS template_origin_type
-      FROM postgres.content_template_runs AS r
-      INNER JOIN postgres.game_tasks AS g
-        ON toString(g.id) = toString(r.game_id)
-      LEFT JOIN postgres.app_user AS author
-        ON lower(toString(g.user_id)) = lower(toString(author.user_id))
-      WHERE r.run_type = 'user_run'
-        AND g.created_at < toDateTime('${to}')
-        AND g.deleted_at IS NULL
-        AND ${nonEmptySql("r.template_id")}
-        AND NOT ifNull(author.is_internal, false)
-        AND NOT ifNull(author.is_internal_virtual_user, false)
-      UNION ALL
-      SELECT
-        toString(g.id) AS content_id,
-        toString(g.content_source_id) AS template_id,
-        lower(toString(g.user_id)) AS author_id,
-        g.created_at AS created_at,
-        'template_remix' AS template_origin_type
+        if(toString(g.source) = 'content_template', 'template_create', 'template_remix') AS template_origin_type
       FROM postgres.game_tasks AS g
+      INNER JOIN postgres.content_templates AS ct
+        ON lower(toString(g.content_source_id)) = lower(toString(ct.template_id))
       LEFT JOIN postgres.app_user AS author
         ON lower(toString(g.user_id)) = lower(toString(author.user_id))
-      WHERE toString(g.source) = 'user_remix_app'
+      WHERE toString(g.source) IN (${quotedList(TEMPLATE_LINEAGE_SOURCES)})
         AND g.created_at < toDateTime('${to}')
         AND g.deleted_at IS NULL
         AND ${nonEmptySql("g.content_source_id")}
@@ -219,7 +203,7 @@ function templateShareEventsCte(from, to) {
           WHERE cohort_id = ${INTERNAL_COHORT_ID}
         )
         AND lower(toString(e.properties.usr_id)) NOT IN (${internalUserSubquery()})
-        AND toString(e.properties.device_id) NOT IN (${internalDeviceSubquery()})
+        AND lower(toString(e.properties.device_id)) NOT IN (${internalDeviceSubquery()})
         AND toString(e.properties.usr_id) != ''
         AND toString(e.properties.usr_id) != '(null)'
         AND e.event = 'share_channel_click'
@@ -247,7 +231,8 @@ function querySet(start, end) {
         toString(properties.template_id) AS template_id,
         count() AS use_events,
         uniqIf(toString(properties.usr_id), ${validUsrId}) AS use_users,
-        uniq(toDate(timestamp)) AS active_days
+        uniq(toDate(timestamp)) AS active_days,
+        toString(min(toDate(timestamp))) AS first_click_day
       FROM events
       WHERE ${eventFilter}
         AND event = 'template_try_now_click'
@@ -356,10 +341,10 @@ function querySet(start, end) {
       SELECT
         count() AS total_contents,
         countIf(g.is_draft = false) AS published_contents,
-        countIf(toString(g.source) IN (${quotedList(TEMPLATE_SOURCES)})) AS template_contents,
-        countIf(toString(g.source) IN (${quotedList(TEMPLATE_SOURCES)}) AND g.is_draft = false) AS template_published,
-        countIf(toString(g.source) = 'content_template') AS template_attributed_contents,
-        countIf(toString(g.source) = 'content_template' AND g.is_draft = false) AS template_attributed_published,
+        countIf(toString(g.source) IN (${quotedList(TEMPLATE_LINEAGE_SOURCES)}) AND ct.template_id IS NOT NULL) AS template_contents,
+        countIf(toString(g.source) IN (${quotedList(TEMPLATE_LINEAGE_SOURCES)}) AND ct.template_id IS NOT NULL AND g.is_draft = false) AS template_published,
+        countIf(toString(g.source) = 'content_template' AND ct.template_id IS NOT NULL) AS template_attributed_contents,
+        countIf(toString(g.source) = 'content_template' AND ct.template_id IS NOT NULL AND g.is_draft = false) AS template_attributed_published,
         countIf(toString(g.source) = 'user_replace_app') AS ignored_user_replace_app_contents,
         countIf(toString(g.source) = 'user_replace_app' AND g.is_draft = false) AS ignored_user_replace_app_published,
         countIf(toString(g.source) = 'user_remix_app') AS remix_contents,
@@ -367,23 +352,25 @@ function querySet(start, end) {
       FROM postgres.game_tasks AS g
       LEFT JOIN postgres.app_user AS u
         ON lower(toString(g.user_id)) = lower(toString(u.user_id))
+      LEFT JOIN postgres.content_templates AS ct
+        ON lower(toString(g.content_source_id)) = lower(toString(ct.template_id))
       WHERE ${contentFilter}
     `,
     templatePublish: `
       SELECT
-        toString(g.content_source_id) AS template_id,
+        toString(ct.template_id) AS template_id,
         count() AS server_template_contents,
         countIf(g.is_draft = false) AS server_template_published,
         uniqIf(lower(toString(g.user_id)), toString(g.user_id) != '' AND toString(g.user_id) != '(null)') AS server_template_users,
         uniqIf(lower(toString(g.user_id)), g.is_draft = false AND toString(g.user_id) != '' AND toString(g.user_id) != '(null)') AS server_template_published_users
       FROM postgres.game_tasks AS g
+      INNER JOIN postgres.content_templates AS ct
+        ON lower(toString(g.content_source_id)) = lower(toString(ct.template_id))
       LEFT JOIN postgres.app_user AS u
         ON lower(toString(g.user_id)) = lower(toString(u.user_id))
       WHERE ${contentFilter}
-        AND toString(g.source) = 'content_template'
-        AND g.content_source_id IS NOT NULL
-        AND toString(g.content_source_id) != ''
-        AND toString(g.content_source_id) != '(null)'
+        AND toString(g.source) IN (${quotedList(TEMPLATE_LINEAGE_SOURCES)})
+        AND ${nonEmptySql("g.content_source_id")}
       GROUP BY template_id
       ORDER BY server_template_contents DESC
       LIMIT 500
@@ -543,7 +530,19 @@ async function posthogQuery(env, sql, name) {
   return rowObjects(payload);
 }
 
-function mergeByTemplate(clickRows, successRows, windowRunRows, shareRows, templatePublishRows, publishedTemplateRows = []) {
+function onlineDaysInWindow(publishedAt, firstClickAt, start, end) {
+  const startDay = Date.parse(`${String(start).slice(0, 10)}T00:00:00Z`);
+  const endDay = Date.parse(`${String(end).slice(0, 10)}T00:00:00Z`);
+  const publishedDay = Date.parse(`${String(publishedAt || "").slice(0, 10)}T00:00:00Z`);
+  const firstClickDay = Date.parse(`${String(firstClickAt || "").slice(0, 10)}T00:00:00Z`);
+  if (!Number.isFinite(startDay) || !Number.isFinite(endDay) || endDay <= startDay) return 0;
+  const observedStarts = [publishedDay, firstClickDay].filter(Number.isFinite);
+  const observedStart = observedStarts.length ? Math.min(...observedStarts) : startDay;
+  const onlineStart = Math.max(startDay, observedStart);
+  return Math.max(0, Math.round((endDay - onlineStart) / 86400000));
+}
+
+function mergeByTemplate(clickRows, successRows, windowRunRows, shareRows, templatePublishRows, publishedTemplateRows = [], start, end) {
   const byId = new Map();
   function get(id) {
     if (!id) return null;
@@ -569,6 +568,7 @@ function mergeByTemplate(clickRows, successRows, windowRunRows, shareRows, templ
     item.template_remix_events = item.use_events;
     item.template_remix_users = item.use_users;
     item.active_days = number(row.active_days);
+    item.first_click_day = row.first_click_day || "";
   });
   successRows.forEach((row) => {
     const item = get(row.template_id);
@@ -639,6 +639,9 @@ function mergeByTemplate(clickRows, successRows, windowRunRows, shareRows, templ
     item.server_template_published = number(item.server_template_published);
     item.server_template_users = number(item.server_template_users);
     item.server_template_published_users = number(item.server_template_published_users);
+    item.click_active_days = number(item.active_days);
+    item.online_days = onlineDaysInWindow(item.published_at || item.publish_day, item.first_click_day, start, end);
+    item.speed_denominator_days = item.online_days;
     item.gen_success_rate_1d = item.result_events ? item.success_events / item.result_events : (item.use_events ? item.success_events / item.use_events : 0);
     item.post_rate_1d = item.server_template_contents ? item.server_template_published / item.server_template_contents : 0;
     item.template_self_share_content_rate = rate(item.template_self_shared_contents, item.template_created_contents);
@@ -649,8 +652,8 @@ function mergeByTemplate(clickRows, successRows, windowRunRows, shareRows, templ
     item.share_denominator = item.template_created_contents;
     item.share_rate_1d = item.template_all_share_content_rate;
     item.template_post_remix_events = item.server_template_published;
-    item.template_remix_events_per_day = item.active_days ? item.template_remix_events / item.active_days : 0;
-    item.metric_source = "window_content_template_runs_plus_client_template_funnel_and_content_share";
+    item.template_remix_events_per_day = item.speed_denominator_days ? item.template_remix_events / item.speed_denominator_days : 0;
+    item.metric_source = "window_template_lineage_plus_client_template_funnel_and_content_share";
     return item;
   }).sort((a, b) => b.template_remix_events - a.template_remix_events || b.success_users - a.success_users);
 }
@@ -832,7 +835,7 @@ export async function buildMetricsSource(env, options = {}) {
   const eventOverview = eventOverviewRows[0] || {};
   const contentOverview = contentOverviewRows[0] || {};
   const templateShareOverview = templateShareOverviewRows[0] || {};
-  const rows = mergeByTemplate(clickRows, successRows, windowRunRows, shareRows, templatePublishRows, publishTimelineRows);
+  const rows = mergeByTemplate(clickRows, successRows, windowRunRows, shareRows, templatePublishRows, publishTimelineRows, start, end);
   const publishedTemplateMeta = publishTimelineRows.map((row) => ({
     template_id: row.template_id,
     title: templateTitle(row.template_name, row.template_id) || row.template_id,
@@ -925,8 +928,20 @@ export async function buildMetricsSource(env, options = {}) {
       template_all_shared_contents: templateAllSharedContents,
       template_self_share_content_rate_pct: templateSelfShareRate * 100,
       template_all_share_content_rate_pct: templateAllShareRate * 100,
-      source: "share_channel_click + template_content bloodline",
+      source: "share_channel_click + game_tasks.content_source_id template bloodline",
       denominator: "template-system content created in selected window",
+    },
+    DATA_QUALITY: {
+      app_event_scope: "iOS + Android App release",
+      template_click_scope: "iOS only until Android template click/show events ship",
+      client_event_ingestion_gaps: [
+        {
+          start: "2026-08-09",
+          end: "2026-08-12",
+          label: "PostHog 客户端事件采集缺口",
+        },
+      ],
+      server_metrics_affected: false,
     },
     LIVE_CONVERSION_DIAGNOSTICS: {
       success_users: successUsers,
@@ -974,14 +989,14 @@ export async function buildMetricsSource(env, options = {}) {
       project_id: envValue(env, "POSTHOG_PROJECT_ID") || DEFAULT_PROJECT_ID,
       start,
       end,
-      event_scope: "App only: $lib IN posthog-ios/posthog-android, app_env=ppe, build_configuration=release, channel_name != testflight",
-      internal_filter: `server app_user/user_devices + cohort_people cohort_id=${INTERNAL_COHORT_ID}`,
-      content_source: "postgres.game_tasks with deleted_at IS NULL, source exclusions, app_user internal exclusions",
+      event_scope: "App only: $lib IN posthog-ios/posthog-android, app_env=ppe, build_configuration=release, channel_name != testflight; template click/show events are currently iOS-only",
+      internal_filter: `lower(usr_id/device_id) matched to server app_user/user_devices + cohort_people cohort_id=${INTERNAL_COHORT_ID}`,
+      content_source: `postgres.game_tasks with deleted_at IS NULL, user source whitelist (${USER_CONTENT_SOURCES.join(", ")}), app_user internal exclusions`,
       online_time_source: "all recorded App release ai_content_disappear.time_interval through selected end; daily sum in minutes; external users; positive intervals <= 30 minutes",
       template_publish_source: "postgres.content_templates status=published published_at",
       template_run_lifetime_source: "served independently by /api/template-metrics",
       template_run_window_source: "postgres.content_template_runs run_type=user_run created in selected window; external users; publish conversion=game_tasks.status published/all window user_run",
-      template_share_metric: "share_channel_click joined by content_id to template-system content: content_template_runs.user_run game_id union user_remix_app with template content_source_id; content ratio denominator is created template-system content in the selected window",
+      template_share_metric: "share_channel_click joined by content_id to template-system content whose game_tasks.content_source_id matches content_templates.template_id and source is content_template or user_remix_app; content ratio denominator is created template-system content in the selected window",
       queries,
       docs: [
         "analytics-metrics skill §5.6",
@@ -991,8 +1006,9 @@ export async function buildMetricsSource(env, options = {}) {
       ],
       caveats: [
         "2026-08-09 to 2026-08-12 has a known PostHog event-ingestion gap; server game_tasks content counts remain the preferred content source.",
-        "Template source counts intentionally use content_template only; user_replace_app is ignored in this dashboard.",
+        "Template-system content is lineage-based: content_template and user_remix_app rows whose content_source_id matches content_templates.template_id. user_replace_app has no template lineage and is excluded from template metrics while remaining in all-user-content totals.",
         "Template share attribution only counts share_channel_click events with content_id; clicks without content_id cannot be joined back to template-system content.",
+        "template_try_now_click/template_click/template_show are currently iOS-only; Android coverage will create a measurement step-change when released.",
         "Client template funnel users use usr_id, not person_id. TCS remains separate from these overview/template definitions.",
       ],
     },

@@ -469,6 +469,64 @@
       flex-wrap: wrap;
     }
 
+    .ranking-sort-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 3px;
+      border-radius: 999px;
+      background: rgba(22, 24, 31, 0.06);
+      border: 1px solid rgba(22, 24, 31, 0.05);
+    }
+
+    .ranking-sort-button {
+      min-height: 30px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      padding: 6px 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .ranking-sort-button:hover {
+      color: var(--ink);
+    }
+
+    .ranking-sort-button.is-active {
+      background: var(--ink);
+      color: #fff;
+      box-shadow: 0 7px 16px rgba(22, 24, 31, 0.14);
+    }
+
+    .ranking-sort-button:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+
+    .ranking-sort-button .sort-direction {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(22, 24, 31, 0.08);
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .ranking-sort-button.is-active .sort-direction {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
     .ranking-time-sort {
       min-height: 32px;
       border: 1px solid rgba(22, 24, 31, 0.08);
@@ -1247,6 +1305,30 @@
       gap: 12px;
     }
 
+    .data-quality-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: -2px 0 14px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 104, 53, 0.22);
+      border-radius: 6px;
+      background: rgba(255, 202, 189, 0.24);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .data-quality-note strong {
+      flex: 0 0 auto;
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .data-quality-note span {
+      min-width: 0;
+    }
+
     .summary-metric {
       border-radius: var(--radius-md);
       background: rgba(255, 255, 255, 0.76);
@@ -1530,6 +1612,18 @@
     .cadence-cell[data-level="2"] { background: rgba(142, 205, 229, 0.54); }
     .cadence-cell[data-level="3"] { background: rgba(255, 202, 189, 0.76); }
     .cadence-cell[data-level="4"] { background: rgba(255, 104, 53, 0.96); }
+
+    .cadence-cell.is-gap {
+      background: rgba(22, 24, 31, 0.08) !important;
+      border-style: dashed;
+      border-color: rgba(22, 24, 31, 0.16);
+    }
+
+    .cadence-tick.is-gap {
+      color: var(--muted-soft);
+      text-decoration: underline dotted;
+      text-underline-offset: 3px;
+    }
 
     .overview-left-signals {
       display: grid;
@@ -4371,6 +4465,9 @@
 
       var LIVE_MIN_DAY = '2026-08-01';
       var LIVE_FALLBACK_TODAY = '2026-08-20';
+      var CLIENT_EVENT_GAPS = [
+        { start: '2026-08-09', end: '2026-08-12', label: 'PostHog 客户端事件采集缺口' }
+      ];
       var DAY_MS = 24 * 60 * 60 * 1000;
       var AUTO_REFRESH_MS = 5 * 60 * 1000;
       var AUTO_REFRESH_TICK_MS = 60 * 1000;
@@ -4426,6 +4523,7 @@
         windowKey: 'current_17d',
         overviewFilter: 'all',
         rankingView: 'template',
+        rankingSort: 'time',
         rankingTimeOrder: 'desc',
         templateSort: 'usage',
         templateQuery: '',
@@ -4575,6 +4673,31 @@
           label: range.startDay + ' 至 ' + range.endDay,
           pill: range.startDay + ' → ' + range.endDay
         };
+      }
+
+      function clientEventGapForWindow(dataset) {
+        var activeWindow = getActiveTimeWindow();
+        var raw = dataset && dataset.raw ? dataset.raw : {};
+        var quality = raw.DATA_QUALITY || {};
+        var gaps = quality.client_event_ingestion_gaps || CLIENT_EVENT_GAPS;
+        return gaps.find(function (gap) {
+          return gap && compareDays(gap.start, activeWindow.endDay) <= 0
+            && compareDays(gap.end, activeWindow.startDay) >= 0;
+        }) || null;
+      }
+
+      function onlineDaysForActiveWindow(publishedAt, firstClickAt) {
+        var publishedDay = String(publishedAt || '').slice(0, 10);
+        var firstClickDay = String(firstClickAt || '').slice(0, 10);
+        var observedDays = [publishedDay, firstClickDay].filter(function (day) {
+          return day && !Number.isNaN(parseDay(day).getTime());
+        }).sort();
+        if (!observedDays.length) return 0;
+        var activeWindow = getActiveTimeWindow();
+        var observedStart = observedDays[0];
+        var onlineStart = compareDays(observedStart, activeWindow.startDay) > 0 ? observedStart : activeWindow.startDay;
+        if (compareDays(onlineStart, activeWindow.endDay) > 0) return 0;
+        return Math.round((parseDay(activeWindow.endDay).getTime() - parseDay(onlineStart).getTime()) / DAY_MS) + 1;
       }
 
       function ensureTooltipLayer() {
@@ -4845,7 +4968,8 @@
           'template_all_share_content_rate',
           'share_denominator', 'repeat_click_users', 'repeat_try_now_users_7d',
           'repeat_success_users', 'repeat_success_extra_events', 'success_events_for_replay',
-          'replay_users', 'replay_events', 'replay_denominator', 'active_days', 'server_template_contents',
+          'replay_users', 'replay_events', 'replay_denominator', 'active_days', 'click_active_days',
+          'online_days', 'speed_denominator_days', 'server_template_contents',
           'server_template_published', 'server_template_users',
           'server_template_published_users', 'window_usage_count',
           'window_user_count', 'window_success_count',
@@ -5207,8 +5331,12 @@
             title: templateName,
             cover_url: coverUrl
           }));
+          var publishedAt = item.published_at || meta.published_at || '';
           var templateRemixUsers = Number(item.template_remix_users || item.use_users || 0);
           var templateRemixEvents = Number(item.template_remix_events || item.use_events || 0);
+          var clickActiveDays = Number(item.click_active_days || item.active_days || 0);
+          var onlineDays = Number(item.online_days || item.speed_denominator_days || 0) || onlineDaysForActiveWindow(publishedAt, item.first_click_day);
+          var templateClicksPerOnlineDay = onlineDays ? templateRemixEvents / onlineDays : 0;
           var templateReremix = Number(item.template_reremix || item.template_post_remix || item.template_post_remix_events || 0);
           var successUsers = Number(item.success_users || 0);
           var successEvents = Number(item.success_events || 0);
@@ -5253,13 +5381,17 @@
             title: templateName,
             template_name: templateName,
             cover_url: coverUrl,
-            published_at: item.published_at || meta.published_at || '',
+            published_at: publishedAt,
             publish_day: item.publish_day || meta.publish_day || '',
             publish_hour: item.publish_hour != null ? item.publish_hour : meta.publish_hour,
             is_published_catalog: !!meta.is_published_catalog,
             is_catalog_placeholder: isCatalogPlaceholder,
             template_remix_users: templateRemixUsers,
             template_remix_events: templateRemixEvents,
+            click_active_days: clickActiveDays,
+            online_days: onlineDays,
+            speed_denominator_days: onlineDays,
+            template_remix_events_per_day: templateClicksPerOnlineDay,
             template_reremix: templateReremix,
             template_post_remix: templateReremix,
             template_total_remix: templateRemixEvents + templateReremix,
@@ -5417,7 +5549,10 @@
           days.push({
             key: iso,
             label: 'Day ' + dayIndex,
-            weekday: weekdayLabels[cursor.getUTCDay()]
+            weekday: weekdayLabels[cursor.getUTCDay()],
+            is_gap: CLIENT_EVENT_GAPS.some(function (gap) {
+              return compareDays(iso, gap.start) >= 0 && compareDays(iso, gap.end) <= 0;
+            })
           });
           cursor.setUTCDate(cursor.getUTCDate() + 1);
           dayIndex += 1;
@@ -5433,6 +5568,7 @@
                 weekday: day.weekday,
                 part: part,
                 usLabel: usLabels[part],
+                is_gap: day.is_gap,
                 value: map[day.key + '|' + part] || 0
               };
             })
@@ -5690,15 +5826,26 @@
           topPublish: topPublish,
           topShare: topShare,
           metrics: [
-            { label: '模板占比', value: pct(templateShareOfCreation), note: 'content_template / 全部 game_tasks', delta: num(serviceTemplateTotal) + ' / ' + num(templateShareDenominator), tone: 'lime', featured: true },
-            { label: '内容发布率', value: pct(servicePublishRate), note: 'is_draft=false / 非删除内容', delta: num(servicePublishedTotal) + ' / ' + num(serviceContentTotal), tone: 'blue' },
-            { label: '模板发布率', value: pct(serviceTemplateRate), note: '服务端模板来源内容发布', delta: num(serviceTemplatePublished) + ' / ' + num(serviceTemplateTotal), tone: 'blue', featured: true },
+            { label: '模板占比', value: pct(templateShareOfCreation), note: '有模板血缘内容 / 用户创作白名单', delta: num(serviceTemplateTotal) + ' / ' + num(templateShareDenominator), tone: 'lime', featured: true },
+            { label: '内容发布率', value: pct(servicePublishRate), note: 'is_draft=false / 用户创作白名单', delta: num(servicePublishedTotal) + ' / ' + num(serviceContentTotal), tone: 'blue' },
+            { label: '模板发布率', value: pct(serviceTemplateRate), note: '模板创建 + 模板 Remix 血缘', delta: num(serviceTemplatePublished) + ' / ' + num(serviceTemplateTotal), tone: 'blue', featured: true },
             { label: 'Remix 发布率', value: pct(remixRate), note: 'source=user_remix_app', delta: num(remixPublished) + ' / ' + num(remixTotal), tone: 'ink' },
-            { label: 'Try Now 成功率', value: pct(totalSuccessRate), note: '客户端 App release，事件口径', delta: num(tryNowSuccessEvents || totalSuccessUsers) + ' / ' + num(tryNowResultEvents || totalUseUsers), tone: 'ink' },
+            { label: 'Try Now 成功率', value: pct(totalSuccessRate), note: 'iOS + Android result 事件', delta: num(tryNowSuccessEvents || totalSuccessUsers) + ' / ' + num(tryNowResultEvents || totalUseUsers), tone: 'ink' },
             { label: '作者分享率', value: pct(templateSelfShareRate), note: '作者 share_channel_click / 模板系内容', delta: num(templateSelfSharedContents) + ' / ' + num(templateShareCreatedContents) + ' · UV ' + num(templateSelfShareUsers), tone: 'orange' },
             { label: '内容分享率', value: pct(templateAllShareRate), note: '全部外部用户 share_channel_click / 模板系内容', delta: num(templateAllSharedContents) + ' / ' + num(templateShareCreatedContents) + ' · UV ' + num(templateAllShareUsers), tone: 'ink', featured: true }
           ]
         };
+      }
+
+      function renderClientDataQualityNotice(dataset) {
+        var gap = clientEventGapForWindow(dataset);
+        if (!gap) return '';
+        return [
+          '<div class="data-quality-note" role="note">',
+            '<strong>客户端数据缺口</strong>',
+            '<span>' + safeText(gap.start + ' 至 ' + gap.end) + ' 的事件采集不完整；Try Now、热区、发布时间榜卡片点击和速度榜会偏低，服务端内容与发布指标不受影响。</span>',
+          '</div>'
+        ].join('');
       }
 
       function getTcsSnapshot(dataset) {
@@ -5763,6 +5910,7 @@
                     '<h2>总数据</h2>',
                   '</div>',
                 '</div>',
+                renderClientDataQualityNotice(dataset),
                 '<div class="summary-metrics">',
                   snapshot.metrics.map(function (metric) {
                     return buildSummaryMetric(metric.label, metric.value, metric.note, metric.delta, metric.tone, metric.featured);
@@ -5799,10 +5947,13 @@
                   '</div>',
                   '<div class="ranking-head-actions">',
                     '<div class="ghost-pill">模板榜</div>',
-                    '<button class="ranking-time-sort" type="button" data-ranking-time-order aria-label="按发布时间' + (state.rankingTimeOrder === 'asc' ? '正序' : '倒序') + '排列，点击切换方向" title="按发布时间' + (state.rankingTimeOrder === 'asc' ? '正序' : '倒序') + '排列">',
-                      '<span>发布时间</span>',
-                      '<span class="sort-direction" aria-hidden="true">' + (state.rankingTimeOrder === 'asc' ? '↑' : '↓') + '</span>',
-                    '</button>',
+                    '<div class="ranking-sort-group" role="group" aria-label="模板榜排序">',
+                      '<button class="ranking-sort-button' + (state.rankingSort === 'remix' ? ' is-active' : '') + '" type="button" data-ranking-sort="remix" aria-pressed="' + (state.rankingSort === 'remix' ? 'true' : 'false') + '" title="按窗口内 iOS template_try_now_click 数量降序排列">remix 数量</button>',
+                      '<button class="ranking-sort-button' + (state.rankingSort === 'time' ? ' is-active' : '') + '" type="button" data-ranking-sort="time" aria-pressed="' + (state.rankingSort === 'time' ? 'true' : 'false') + '" aria-label="按发布时间' + (state.rankingTimeOrder === 'asc' ? '正序' : '倒序') + '排列，点击切换方向" title="按发布时间' + (state.rankingTimeOrder === 'asc' ? '正序' : '倒序') + '排列">',
+                        '<span>发布时间</span>',
+                        '<span class="sort-direction" aria-hidden="true">' + (state.rankingTimeOrder === 'asc' ? '↑' : '↓') + '</span>',
+                      '</button>',
+                    '</div>',
                   '</div>',
                 '</div>',
                 '<div class="ranking-scroll-shell">' + renderBusinessOverviewRankingPanel(dataset) + '</div>',
@@ -5813,7 +5964,7 @@
                   '<div>',
                     '<h3>速度榜</h3>',
                   '</div>',
-                  '<div class="ghost-pill">remix / 天</div>',
+                  '<div class="ghost-pill">iOS 点击 / 在线天</div>',
                 '</div>',
                 '<div class="speed-board">' + renderVelocityBoard(dataset) + '</div>',
               '</div>',
@@ -6044,7 +6195,10 @@
         var publishedRows = (dataset.topRemix || []).filter(function (item) {
           return templatePublishTimestamp(item) != null;
         });
-        var rankingRows = sortTemplatesByPublishTime(publishedRows.length ? publishedRows : dataset.topRemix, state.rankingTimeOrder);
+        var rankingSource = publishedRows.length ? publishedRows : dataset.topRemix;
+        var rankingRows = state.rankingSort === 'remix'
+          ? sortTemplatesByRemixCount(rankingSource)
+          : sortTemplatesByPublishTime(rankingSource, state.rankingTimeOrder);
         var rowPlan = [2, 3, 4];
         var offset = 0;
         var html = ['<div class="ranking-grid">'];
@@ -6089,6 +6243,14 @@
           if (bTime == null) return -1;
           return direction * (aTime - bTime)
             || (b.template_remix_events - a.template_remix_events)
+            || String(a.template_name || '').localeCompare(String(b.template_name || ''));
+        });
+      }
+
+      function sortTemplatesByRemixCount(rows) {
+        return (rows || []).slice().sort(function (a, b) {
+          return (Number(b.template_remix_events || 0) - Number(a.template_remix_events || 0))
+            || ((templatePublishTimestamp(b) || 0) - (templatePublishTimestamp(a) || 0))
             || String(a.template_name || '').localeCompare(String(b.template_name || ''));
         });
       }
@@ -6221,7 +6383,7 @@
             '<div class="ranking-body">',
               '<h3 class="ranking-title' + titleSizeClass(title) + '">' + safeText(title) + '</h3>',
               '<div class="ranking-submetric">发布 ' + safeText(item.publish_day || (item.published_at ? fmtDate(item.published_at) : '时间待补')) + '</div>',
-              '<div class="ranking-metric">remix ' + num(item.template_remix_events || 0) + '</div>',
+              '<div class="ranking-metric" title="窗口内 iOS template_try_now_click">remix ' + num(item.template_remix_events || 0) + '</div>',
             '</div>',
           '</a>'
         ].join('');
@@ -6240,17 +6402,17 @@
         var fastest = list[0];
         return [
           '<div class="speed-overview">',
-            '<a class="speed-hero" href="' + safeText(templateUrl(fastest.template_id)) + '" target="_blank" rel="noopener" data-tooltip="' + safeText((fastest.template_name || '-') + '\nremix/天 ' + num(fastest.template_remix_events_per_day || 0, 2) + '\n累计 remix ' + num(fastest.template_remix_events || 0) + '\n活跃 ' + num(fastest.active_days || 0) + ' 天') + '">',
+            '<a class="speed-hero" href="' + safeText(templateUrl(fastest.template_id)) + '" target="_blank" rel="noopener" data-tooltip="' + safeText((fastest.template_name || '-') + '\niOS 点击/在线天 ' + num(fastest.template_remix_events_per_day || 0, 2) + '\n窗口点击 ' + num(fastest.template_remix_events || 0) + '\n在线 ' + num(fastest.online_days || fastest.speed_denominator_days || 0) + ' 天 · 有点击 ' + num(fastest.click_active_days || fastest.active_days || 0) + ' 天') + '">',
               '<div class="speed-hero-copy">',
                 '<strong>' + safeText(fastest.template_name || '-') + '</strong>',
-                '<span>当前窗口速度最高，直接看 remix / 时间。</span>',
+                '<span>当前窗口 iOS 点击除以实际在线天数。</span>',
               '</div>',
-              '<div class="speed-hero-value"><strong>' + num(fastest.template_remix_events_per_day || 0, 2) + '</strong><span>remix/天</span></div>',
+              '<div class="speed-hero-value"><strong>' + num(fastest.template_remix_events_per_day || 0, 2) + '</strong><span>点击/天</span></div>',
             '</a>',
             '<div class="speed-bars">' + list.map(function (item, index) {
               var rate = Number(item.template_remix_events_per_day || 0);
               var height = Math.max(28, rate / maxRate * 172);
-              var tooltip = safeText((item.template_name || '-') + '\nremix/天 ' + num(rate, 2) + '\n累计 remix ' + num(item.template_remix_events || 0) + '\n活跃 ' + num(item.active_days || 0) + ' 天');
+              var tooltip = safeText((item.template_name || '-') + '\niOS 点击/在线天 ' + num(rate, 2) + '\n窗口点击 ' + num(item.template_remix_events || 0) + '\n在线 ' + num(item.online_days || item.speed_denominator_days || 0) + ' 天 · 有点击 ' + num(item.click_active_days || item.active_days || 0) + ' 天');
               return [
                 '<a class="speed-bar-col' + (index === 0 ? ' is-hot' : '') + '" href="' + safeText(templateUrl(item.template_id)) + '" target="_blank" rel="noopener" data-tooltip="' + tooltip + '">',
                   '<div class="speed-bar-wrap">',
@@ -6339,18 +6501,19 @@
         var columns = ' style="grid-template-columns:repeat(' + heatmap.days.length + ', minmax(0, 1fr))"';
         var topLine = ['<div class="cadence-topline"><div class="cadence-label">day</div><div class="cadence-cells is-top"' + columns + '>'];
         heatmap.days.forEach(function (day) {
-          topLine.push('<div class="cadence-tick">' + day.label + '</div>');
+          topLine.push('<div class="cadence-tick' + (day.is_gap ? ' is-gap' : '') + '"' + (day.is_gap ? ' data-tooltip="客户端事件采集缺口"' : '') + '>' + day.label + '</div>');
         });
         topLine.push('</div></div>');
         var html = [
-          '<div class="cadence-legend"><span>当前窗口 `template_try_now_click` 活跃热区。</span><div class="legend-steps"><span></span><span></span><span></span><span></span><span></span></div></div>',
+          '<div class="cadence-legend"><span>iOS `template_try_now_click` 活跃热区；灰色虚线为采集缺口。</span><div class="legend-steps"><span></span><span></span><span></span><span></span><span></span></div></div>',
           topLine.join('')
         ];
         heatmap.rows.forEach(function (row) {
           html.push('<div class="cadence-row"><div class="cadence-label">' + row.label + '</div><div class="cadence-cells"' + columns + '>');
           row.values.forEach(function (cell) {
             var level = activityLevel(cell.value, heatmap.max);
-            html.push('<div class="cadence-cell" data-level="' + level + '" data-tooltip="' + safeText(cell.weekday + '\n' + row.label + '\n' + cell.usLabel + '\n点击 remix ' + num(cell.value)) + '"></div>');
+            var gapText = cell.is_gap ? '\n客户端事件采集缺口，数值不完整' : '';
+            html.push('<div class="cadence-cell' + (cell.is_gap ? ' is-gap' : '') + '" data-level="' + level + '" data-tooltip="' + safeText(cell.weekday + '\n' + row.label + '\n' + cell.usLabel + '\niOS 点击 ' + num(cell.value) + gapText) + '"></div>');
           });
           html.push('</div></div>');
         });
@@ -6436,14 +6599,14 @@
         var rows = dataset.rows.filter(isPublishedTemplateDetail);
         var total = rows.length;
         var divisor = total || 1;
-        function isFast(item) { return Number(item.active_days || 0) <= 7 && Number(item.template_remix_events_per_day || 0) >= 6; }
+        function isFast(item) { return Number(item.online_days || item.speed_denominator_days || 0) > 0 && Number(item.online_days || item.speed_denominator_days || 0) <= 7 && Number(item.template_remix_events_per_day || 0) >= 6; }
         function isHighPublish(item) { return Number(item.post_after_success_rate || 0) >= 0.25 && Number(item.success_users || 0) >= 5; }
         function isHighShare(item) { return Number(item.template_all_share_content_rate || 0) >= 0.1 && Number(item.template_created_contents || 0) >= 3; }
         var states = [
           {
             label: '高速新模板',
             count: rows.filter(isFast).length,
-            note: '上线短但点击速度高',
+            note: '上线 7 天内且 iOS 点击速度高',
             tone: 'lime'
           },
           {
@@ -7271,10 +7434,10 @@
 
       function templateNarrative(item, label) {
         var stories = {
-          '入口吸引力': '点击 remix 已经冲到头部，适合做入口层判断。',
-          '点击效率': '短期内就跑出高点击和不低成功生成，起势很快。',
+          '入口吸引力': 'iOS Try Now 点击已经冲到头部，适合做入口层判断。',
+          '点击效率': '短期内跑出较高的 iOS 点击和不低成功生成，起势很快。',
           '稳定主盘': '成功生成与发布承接共同支撑，属于成熟盘。',
-          '起势最快': '上线时间短，但 remix/day 已经拉到全场最高。',
+          '起势最快': '上线时间短，但 iOS 点击/在线天已经拉到全场最高。',
           '近期强势': '新模板里承接最好，容易继续追。',
           '可继续观察': '速度没有掉队，但还需要更多量验证。'
         };
@@ -7313,12 +7476,12 @@
         var risingList = document.getElementById('template-rising-leaderboard');
         if (remixList) {
           remixList.innerHTML = dataset.topRemix.slice(0, 8).map(function (item, index) {
-            return leaderboardItem(index, item, num(item.template_remix_events), 'click remix', '点击用户 ' + num(item.template_remix_users) + ' · 成功 ' + num(item.success_users));
+            return leaderboardItem(index, item, num(item.template_remix_events), 'iOS 点击', '点击用户 ' + num(item.template_remix_users) + ' · 成功 ' + num(item.success_users));
           }).join('');
         }
         if (risingList) {
           risingList.innerHTML = dataset.rising.slice(0, 8).map(function (item, index) {
-            return leaderboardItem(index, item, num(item.template_remix_events_per_day, 2), 'remix/day', '活跃 ' + num(item.active_days) + ' 天 · 再remix ' + num(item.template_reremix));
+            return leaderboardItem(index, item, num(item.template_remix_events_per_day, 2), 'iOS 点击/天', '在线 ' + num(item.online_days || 0) + ' 天 · 有点击 ' + num(item.click_active_days || item.active_days || 0) + ' 天');
           }).join('');
         }
       }
@@ -7372,7 +7535,7 @@
             },
             label: {
               formatter: function (params) {
-                return params.name + '\n\nremix ' + num(params.value);
+                return params.name + '\n\niOS 点击 ' + num(params.value);
               }
             }
           };
@@ -7381,7 +7544,7 @@
           animationDuration: 500,
           tooltip: {
             formatter: function (params) {
-              return params.name + '<br/>点击 remix ' + num(params.value);
+              return params.name + '<br/>iOS 点击 ' + num(params.value);
             }
           },
           series: [{
@@ -7697,9 +7860,14 @@
           };
         });
 
-        Array.prototype.forEach.call(document.querySelectorAll('[data-ranking-time-order]'), function (button) {
+        Array.prototype.forEach.call(document.querySelectorAll('[data-ranking-sort]'), function (button) {
           button.onclick = function () {
-            state.rankingTimeOrder = state.rankingTimeOrder === 'asc' ? 'desc' : 'asc';
+            var nextSort = button.getAttribute('data-ranking-sort');
+            if (nextSort === 'time' && state.rankingSort === 'time') {
+              state.rankingTimeOrder = state.rankingTimeOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+              state.rankingSort = nextSort === 'remix' ? 'remix' : 'time';
+            }
             renderActiveMode(dataset);
             bindEvents(datasetMap);
             syncMode();
