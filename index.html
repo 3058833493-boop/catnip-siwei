@@ -125,6 +125,205 @@
       flex-wrap: wrap;
     }
 
+    .help-button {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      padding: 0;
+      border: 1px solid rgba(22, 24, 31, 0.09);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .help-button:hover,
+    .help-button:focus-visible {
+      border-color: rgba(22, 24, 31, 0.22);
+      background: var(--white);
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    body.tour-open {
+      overflow: hidden;
+    }
+
+    .tour-root {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      pointer-events: none;
+    }
+
+    .tour-shield {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: auto;
+      cursor: default;
+    }
+
+    .tour-spotlight {
+      position: fixed;
+      z-index: 1;
+      border: 2px solid var(--lime);
+      border-radius: 14px;
+      box-shadow:
+        0 0 0 5px rgba(214, 244, 0, 0.2),
+        0 0 0 9999px rgba(16, 18, 24, 0.6);
+      pointer-events: none;
+      transition: top 220ms ease, left 220ms ease, width 220ms ease, height 220ms ease;
+    }
+
+    .tour-card {
+      position: fixed;
+      z-index: 2;
+      width: min(360px, calc(100vw - 32px));
+      padding: 18px;
+      border: 1px solid rgba(22, 24, 31, 0.1);
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 20px 56px rgba(16, 18, 24, 0.22);
+      pointer-events: auto;
+    }
+
+    .tour-card:focus {
+      outline: none;
+    }
+
+    .tour-card-head,
+    .tour-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .tour-step-label {
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .tour-skip {
+      padding: 4px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tour-skip:hover,
+    .tour-skip:focus-visible {
+      color: var(--ink);
+      outline: none;
+    }
+
+    .tour-progress {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 5px;
+      margin: 14px 0 18px;
+    }
+
+    .tour-progress span {
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(22, 24, 31, 0.1);
+    }
+
+    .tour-progress span.is-active {
+      background: var(--lime);
+    }
+
+    .tour-title {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .tour-copy {
+      margin: 10px 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .tour-card-actions {
+      justify-content: flex-end;
+    }
+
+    .tour-back,
+    .tour-next {
+      min-height: 36px;
+      padding: 0 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tour-back {
+      border: 1px solid rgba(22, 24, 31, 0.1);
+      background: #f3f4f6;
+      color: var(--ink);
+    }
+
+    .tour-back:disabled {
+      opacity: 0.38;
+      cursor: default;
+    }
+
+    .tour-next {
+      border: 1px solid #15161d;
+      background: #15161d;
+      color: #fff;
+    }
+
+    .tour-back:focus-visible,
+    .tour-next:focus-visible {
+      outline: 3px solid rgba(214, 244, 0, 0.48);
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 760px) {
+      .tour-card {
+        left: 16px !important;
+        right: 16px;
+        bottom: 16px;
+        top: auto !important;
+        width: auto;
+        padding: 16px;
+      }
+
+      .tour-title {
+        font-size: 20px;
+      }
+
+      .tour-copy {
+        margin-bottom: 16px;
+        font-size: 13px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tour-spotlight {
+        transition: none;
+      }
+    }
+
     .chrome-center {
       flex: 1;
       justify-content: center;
@@ -4176,6 +4375,51 @@
       var AUTO_REFRESH_MS = 5 * 60 * 1000;
       var AUTO_REFRESH_TICK_MS = 60 * 1000;
       var FOCUS_REFRESH_STALE_MS = 2 * 60 * 1000;
+      var TOUR_STORAGE_KEY = 'catnip-dashboard-tour-v1';
+      var TOUR_STEPS = [
+        {
+          mode: 'overview',
+          target: '.mode-toggle',
+          placement: 'below',
+          title: '切换数据视角',
+          copy: '总览查看整体业务，模板查看单个模板表现；TCS 使用独立口径，不与业务总盘混算。'
+        },
+        {
+          mode: 'overview',
+          target: '#date-range-control',
+          placement: 'below',
+          title: '选择统计时间',
+          copy: '这里控制总览和窗口类指标。模板详情的成功率与发布转化按发布至今累计，不受这个时间窗影响。'
+        },
+        {
+          mode: 'template',
+          targets: [
+            '#panel-template .overview-right .card-head',
+            '#panel-template .template-ranking-tools'
+          ],
+          placement: 'left',
+          mobileInline: 'end',
+          title: '找到并比较模板',
+          copy: '右侧可以搜索模板，并按使用、成功率或发布转化排序；点击任意模板，左侧详情会同步更新。'
+        },
+        {
+          mode: 'template',
+          target: '#panel-template .template-hero',
+          placement: 'right',
+          mobileInline: 'start',
+          title: '读懂指标证据',
+          copy: '比例旁直接展示分子与分母；“指标口径”里可以查看完整定义、内部用户过滤和时间范围。'
+        }
+      ];
+
+      var tourState = {
+        active: false,
+        index: 0,
+        originMode: 'overview',
+        root: null,
+        keyHandler: null,
+        layoutHandler: null
+      };
 
       var state = {
         mode: 'overview',
@@ -5237,6 +5481,7 @@
                   '</div>',
                 '</div>',
                 '<div class="chrome-right">',
+                  '<button class="help-button" type="button" id="open-dashboard-tour" aria-label="查看页面引导" title="查看页面引导">?</button>',
                   '<button class="pill is-secondary" type="button" id="refresh-live-data">刷新数据</button>',
                   '<button class="pill" type="button" id="jump-current-link">打开源链接</button>',
                 '</div>',
@@ -7505,6 +7750,13 @@
           };
         }
 
+        var tourHelp = document.getElementById('open-dashboard-tour');
+        if (tourHelp) {
+          tourHelp.onclick = function () {
+            startDashboardTour(true);
+          };
+        }
+
         var startInput = document.getElementById('date-range-start');
         var endInput = document.getElementById('date-range-end');
         var applyDateRange = document.getElementById('apply-date-range');
@@ -7598,6 +7850,245 @@
           refresh.disabled = state.isRefreshing;
           refresh.textContent = state.isRefreshing ? '刷新中' : '刷新数据';
         }
+      }
+
+      function hasCompletedDashboardTour() {
+        try {
+          return window.localStorage.getItem(TOUR_STORAGE_KEY) === 'complete';
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function rememberDashboardTour() {
+        try {
+          window.localStorage.setItem(TOUR_STORAGE_KEY, 'complete');
+        } catch (error) {
+          return;
+        }
+      }
+
+      function buildDashboardTour() {
+        var root = document.createElement('div');
+        root.className = 'tour-root';
+        root.innerHTML = [
+          '<div class="tour-shield" aria-hidden="true"></div>',
+          '<div class="tour-spotlight" aria-hidden="true"></div>',
+          '<div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-copy" tabindex="-1">',
+            '<div class="tour-card-head">',
+              '<span class="tour-step-label"></span>',
+              '<button class="tour-skip" type="button">跳过</button>',
+            '</div>',
+            '<div class="tour-progress" aria-hidden="true"></div>',
+            '<h2 class="tour-title" id="tour-title"></h2>',
+            '<p class="tour-copy" id="tour-copy"></p>',
+            '<div class="tour-card-actions">',
+              '<button class="tour-back" type="button">上一步</button>',
+              '<button class="tour-next" type="button">下一步</button>',
+            '</div>',
+          '</div>'
+        ].join('');
+        root.querySelector('.tour-skip').onclick = function () {
+          closeDashboardTour(true);
+        };
+        root.querySelector('.tour-back').onclick = function () {
+          showDashboardTourStep(tourState.index - 1);
+        };
+        root.querySelector('.tour-next').onclick = function () {
+          if (tourState.index >= TOUR_STEPS.length - 1) {
+            closeDashboardTour(true);
+            return;
+          }
+          showDashboardTourStep(tourState.index + 1);
+        };
+        return root;
+      }
+
+      function startDashboardTour(force) {
+        if (tourState.active || !state.datasetMap) return;
+        if (!force && hasCompletedDashboardTour()) return;
+        tourState.active = true;
+        tourState.index = 0;
+        tourState.originMode = state.mode;
+        tourState.root = buildDashboardTour();
+        document.body.appendChild(tourState.root);
+        document.body.classList.add('tour-open');
+        tourState.keyHandler = function (event) {
+          if (event.key === 'Escape') {
+            closeDashboardTour(true);
+          } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            if (tourState.index >= TOUR_STEPS.length - 1) closeDashboardTour(true);
+            else showDashboardTourStep(tourState.index + 1);
+          } else if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            showDashboardTourStep(tourState.index - 1);
+          }
+        };
+        tourState.layoutHandler = function () {
+          positionDashboardTour();
+        };
+        document.addEventListener('keydown', tourState.keyHandler);
+        window.addEventListener('resize', tourState.layoutHandler);
+        window.addEventListener('scroll', tourState.layoutHandler, true);
+        showDashboardTourStep(0);
+      }
+
+      function closeDashboardTour(markComplete) {
+        if (!tourState.active) return;
+        if (markComplete) rememberDashboardTour();
+        document.removeEventListener('keydown', tourState.keyHandler);
+        window.removeEventListener('resize', tourState.layoutHandler);
+        window.removeEventListener('scroll', tourState.layoutHandler, true);
+        if (tourState.root) tourState.root.remove();
+        document.body.classList.remove('tour-open');
+        tourState.active = false;
+        tourState.root = null;
+        if (state.datasetMap && state.mode !== tourState.originMode) {
+          state.mode = tourState.originMode;
+          var dataset = getActiveDataset(state.datasetMap);
+          renderActiveMode(dataset);
+          bindEvents(state.datasetMap);
+          syncMode();
+        }
+        var help = document.getElementById('open-dashboard-tour');
+        if (help) help.focus();
+      }
+
+      function showDashboardTourStep(index) {
+        if (!tourState.active) return;
+        tourState.index = Math.max(0, Math.min(TOUR_STEPS.length - 1, index));
+        var step = TOUR_STEPS[tourState.index];
+        if (state.mode !== step.mode) {
+          state.mode = step.mode;
+          var dataset = getActiveDataset(state.datasetMap);
+          renderActiveMode(dataset);
+          bindEvents(state.datasetMap);
+          syncMode();
+        }
+        var root = tourState.root;
+        root.querySelector('.tour-step-label').textContent = (tourState.index + 1) + ' / ' + TOUR_STEPS.length;
+        root.querySelector('.tour-title').textContent = step.title;
+        root.querySelector('.tour-copy').textContent = step.copy;
+        root.querySelector('.tour-back').disabled = tourState.index === 0;
+        root.querySelector('.tour-next').textContent = tourState.index === TOUR_STEPS.length - 1 ? '完成' : '下一步';
+        root.querySelector('.tour-progress').innerHTML = TOUR_STEPS.map(function (_, progressIndex) {
+          return '<span class="' + (progressIndex <= tourState.index ? 'is-active' : '') + '"></span>';
+        }).join('');
+        window.requestAnimationFrame(function () {
+          var targetInfo = getDashboardTourTarget(step);
+          if (!targetInfo) {
+            if (tourState.index < TOUR_STEPS.length - 1) showDashboardTourStep(tourState.index + 1);
+            else closeDashboardTour(true);
+            return;
+          }
+          var templatePanel = document.getElementById('panel-template');
+          var usesMobilePanelPosition = window.innerWidth <= 760 && templatePanel && step.mobileInline;
+          if (!usesMobilePanelPosition) {
+            targetInfo.element.scrollIntoView({
+              block: 'nearest',
+              inline: window.innerWidth <= 760 ? 'nearest' : 'center',
+              behavior: 'instant'
+            });
+          }
+          if (usesMobilePanelPosition) {
+            templatePanel.scrollLeft = step.mobileInline === 'start'
+              ? 0
+              : Math.max(0, templatePanel.scrollWidth - templatePanel.clientWidth);
+          }
+          window.requestAnimationFrame(function () {
+            positionDashboardTour();
+            var card = root.querySelector('.tour-card');
+            if (card) card.focus({ preventScroll: true });
+          });
+        });
+      }
+
+      function getDashboardTourTarget(step) {
+        var selectors = step.targets || [step.target];
+        var elements = selectors.map(function (selector) {
+          return document.querySelector(selector);
+        }).filter(Boolean);
+        if (!elements.length) return null;
+        var rects = elements.map(function (element) {
+          return element.getBoundingClientRect();
+        });
+        var left = Math.min.apply(null, rects.map(function (rect) { return rect.left; }));
+        var top = Math.min.apply(null, rects.map(function (rect) { return rect.top; }));
+        var right = Math.max.apply(null, rects.map(function (rect) { return rect.right; }));
+        var bottom = Math.max.apply(null, rects.map(function (rect) { return rect.bottom; }));
+        return {
+          element: elements[0],
+          rect: {
+            left: left,
+            top: top,
+            right: right,
+            bottom: bottom,
+            width: right - left,
+            height: bottom - top
+          }
+        };
+      }
+
+      function positionDashboardTour() {
+        if (!tourState.active || !tourState.root) return;
+        var step = TOUR_STEPS[tourState.index];
+        var targetInfo = getDashboardTourTarget(step);
+        if (!targetInfo) return;
+        var target = targetInfo.element;
+        var rect = targetInfo.rect;
+        var viewportWidth = window.innerWidth;
+        var viewportHeight = window.innerHeight;
+        var spotlight = tourState.root.querySelector('.tour-spotlight');
+        var card = tourState.root.querySelector('.tour-card');
+        var spotlightPadding = 8;
+        var left = Math.max(8, rect.left - spotlightPadding);
+        var top = Math.max(8, rect.top - spotlightPadding);
+        var right = Math.min(viewportWidth - 8, rect.right + spotlightPadding);
+        var bottom = Math.min(viewportHeight - 8, rect.bottom + spotlightPadding);
+        if (viewportWidth <= 760) {
+          bottom = Math.min(bottom, card.getBoundingClientRect().top - 12);
+          if (bottom < top + 24) top = Math.max(8, bottom - 24);
+        }
+        spotlight.style.left = left + 'px';
+        spotlight.style.top = top + 'px';
+        spotlight.style.width = Math.max(24, right - left) + 'px';
+        spotlight.style.height = Math.max(24, bottom - top) + 'px';
+        spotlight.style.borderRadius = Math.max(10, Math.min(22, Number.parseFloat(window.getComputedStyle(target).borderRadius) || 14)) + 'px';
+
+        if (viewportWidth <= 760) return;
+        var cardRect = card.getBoundingClientRect();
+        var gap = 18;
+        var pagePadding = 16;
+        var cardLeft;
+        var cardTop;
+        if (step.placement === 'left' && rect.left >= cardRect.width + gap + pagePadding) {
+          cardLeft = rect.left - cardRect.width - gap;
+          cardTop = rect.top + (rect.height - cardRect.height) / 2;
+        } else if (step.placement === 'right' && viewportWidth - rect.right >= cardRect.width + gap + pagePadding) {
+          cardLeft = rect.right + gap;
+          cardTop = rect.top + (rect.height - cardRect.height) / 2;
+        } else if (step.placement === 'below' && viewportHeight - rect.bottom >= cardRect.height + gap + pagePadding) {
+          cardLeft = rect.left + (rect.width - cardRect.width) / 2;
+          cardTop = rect.bottom + gap;
+        } else if (rect.top >= cardRect.height + gap + pagePadding) {
+          cardLeft = rect.left + (rect.width - cardRect.width) / 2;
+          cardTop = rect.top - cardRect.height - gap;
+        } else if (viewportWidth - rect.right >= cardRect.width + gap + pagePadding) {
+          cardLeft = rect.right + gap;
+          cardTop = rect.top + (rect.height - cardRect.height) / 2;
+        } else {
+          cardLeft = rect.left - cardRect.width - gap;
+          cardTop = rect.top + (rect.height - cardRect.height) / 2;
+        }
+        card.style.left = Math.max(pagePadding, Math.min(viewportWidth - cardRect.width - pagePadding, cardLeft)) + 'px';
+        card.style.top = Math.max(pagePadding, Math.min(viewportHeight - cardRect.height - pagePadding, cardTop)) + 'px';
+      }
+
+      function scheduleDashboardTour() {
+        window.setTimeout(function () {
+          startDashboardTour(false);
+        }, 520);
       }
 
       function rerenderTemplateOnly(dataset) {
@@ -7697,6 +8188,7 @@
           app.innerHTML = buildShell();
           applySourceData(raw);
           startAutoRefresh();
+          scheduleDashboardTour();
         } catch (error) {
           app.className = 'is-load-error';
           app.innerHTML = buildLoadErrorShell(error);
