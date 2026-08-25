@@ -9676,6 +9676,16 @@ window.__TEMPLATE_METRICS_SOURCE__ = {
     {
       "template_id": "eaa60054-0f5d-44c9-a9b4-2d1f068b2b03",
       "title": "Ramen Roulette"
+    },
+    {
+      "template_id": "68c162ed-0d9e-40a0-95a3-948d36dd4f8f",
+      "title": "angle",
+      "cover_url": "https://app-cdn.catnips.ai/catnip/apps/30aff68d-514f-47b8-a808-37e2bfb700b8/v1/cover.png"
+    },
+    {
+      "template_id": "f81c74d2-8205-4b35-99be-d85605b9c01c",
+      "title": "idol",
+      "cover_url": "https://app-cdn.catnips.ai/catnip/apps/16bdf6b8-4a83-4f51-96fc-8f0cdb3963b3/v1/cover.png"
     }
   ],
   "TEMPLATE_NAMES": {
