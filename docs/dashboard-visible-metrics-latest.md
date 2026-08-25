@@ -104,7 +104,6 @@ AND game_tasks.source IN ('content_template','user_remix_app')
 | 模板占比 | 有模板血缘的 `content_template` + `user_remix_app` 内容数 / 用户创作来源白名单内容数 | `postgres.game_tasks` + `postgres.content_templates` | 顶部日期窗 | 实时 |
 | 内容发布率 | `is_draft=false` 的内容数 / 全部符合基础过滤的内容数 | `postgres.game_tasks` | 顶部日期窗 | 实时 |
 | 模板发布率 | 模板系内容中 `is_draft=false` / 全部模板系内容 | `postgres.game_tasks` + `postgres.content_templates` | 顶部日期窗 | 实时 |
-| Remix 发布率 | `source='user_remix_app' AND is_draft=false` / `source='user_remix_app'` | `postgres.game_tasks` | 顶部日期窗 | 实时 |
 | Try Now 成功率 | `template_try_now_result(success='1')` 事件数 / 全部 `template_try_now_result` 事件数 | PostHog `events`，iOS + Android | 顶部日期窗 | 实时，但受客户端埋点完整性影响 |
 | 作者分享率 | 被内容作者本人点过分享的去重模板系内容数 / 窗口内创建的去重模板系内容数 | `share_channel_click` + 模板内容归因 | 顶部日期窗 | 实时 |
 | 内容分享率 | 被任意外部用户点过分享的去重模板系内容数 / 窗口内创建的去重模板系内容数 | `share_channel_click` + 模板内容归因 | 顶部日期窗 | 实时 |

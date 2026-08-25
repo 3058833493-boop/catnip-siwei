@@ -5796,9 +5796,6 @@
         var serviceTemplateRate = serviceTemplateTotal ? serviceTemplatePublished / serviceTemplateTotal : 0;
         var templateShareDenominator = serviceContentTotal || totalCreation;
         var templateShareOfCreation = templateShareDenominator ? serviceTemplateTotal / templateShareDenominator : 0;
-        var remixTotal = Number(contentStats.remix_contents || 0);
-        var remixPublished = Number(contentStats.remix_published || 0);
-        var remixRate = remixTotal ? remixPublished / remixTotal : 0;
         var templateUsageTotal = dataset.rows.reduce(function (sum, item) {
           return sum + Number(item.template_remix_events || 0);
         }, 0);
@@ -5829,7 +5826,6 @@
             { label: '模板占比', value: pct(templateShareOfCreation), note: '有模板血缘内容 / 用户创作白名单', delta: num(serviceTemplateTotal) + ' / ' + num(templateShareDenominator), tone: 'lime', featured: true },
             { label: '内容发布率', value: pct(servicePublishRate), note: 'is_draft=false / 用户创作白名单', delta: num(servicePublishedTotal) + ' / ' + num(serviceContentTotal), tone: 'blue' },
             { label: '模板发布率', value: pct(serviceTemplateRate), note: '模板创建 + 模板 Remix 血缘', delta: num(serviceTemplatePublished) + ' / ' + num(serviceTemplateTotal), tone: 'blue', featured: true },
-            { label: 'Remix 发布率', value: pct(remixRate), note: 'source=user_remix_app', delta: num(remixPublished) + ' / ' + num(remixTotal), tone: 'ink' },
             { label: 'Try Now 成功率', value: pct(totalSuccessRate), note: 'iOS + Android result 事件', delta: num(tryNowSuccessEvents || totalSuccessUsers) + ' / ' + num(tryNowResultEvents || totalUseUsers), tone: 'ink' },
             { label: '作者分享率', value: pct(templateSelfShareRate), note: '作者 share_channel_click / 模板系内容', delta: num(templateSelfSharedContents) + ' / ' + num(templateShareCreatedContents) + ' · UV ' + num(templateSelfShareUsers), tone: 'orange' },
             { label: '内容分享率', value: pct(templateAllShareRate), note: '全部外部用户 share_channel_click / 模板系内容', delta: num(templateAllSharedContents) + ' / ' + num(templateShareCreatedContents) + ' · UV ' + num(templateAllShareUsers), tone: 'ink', featured: true }
